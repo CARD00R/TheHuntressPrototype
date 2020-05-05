@@ -22,12 +22,13 @@ enum class EParentStance : uint8
 UENUM(BlueprintType)
 enum class EStanceStatus : uint8
 {
-	Ess_SIdling UMETA(DisplayName = "SIdling"),
-	Ess_SWalking UMETA(DisplayName = "SWalking"),
-	Ess_SJogging UMETA(DisplayName = "SJogging"),
-	Ess_SSprinting UMETA(DisplayName = "SSprinting"),
-	Ess_CIdling UMETA(DisplayName = "CIdling"),
-	Ess_CWalking UMETA(DisplayName = "CWalking"),
+	Ess_StandIdling UMETA(DisplayName = "StandIdling"),
+	Ess_StandWalking UMETA(DisplayName = "StandWalking"),
+	Ess_StandJogging UMETA(DisplayName = "StandJogging"),
+	Ess_StandSprinting UMETA(DisplayName = "StandSprinting"),
+	Ess_CrouchIdling UMETA(DisplayName = "CrouchIdling"),
+	Ess_CrouchWalking UMETA(DisplayName = "CrouchWalking"),
+	Ess_CrouchSprinting UMETA(DisplayName = "CrouchSprinting"),
 	Ess_InAir UMETA(DisplayName = "InAir"),
 	Ess_NA UMETA(DisplayName = "NA"),
 	Ess_Max UMETA(DisplayName = "DefaultMax")
@@ -35,12 +36,13 @@ enum class EStanceStatus : uint8
 UENUM(BlueprintType)
 enum class ERequestStance : uint8
 {
-	Ers_SIdling UMETA(DisplayName = "SIdling"),
-	Ers_SWalking UMETA(DisplayName = "SWalking"),
-	Ers_SJogging UMETA(DisplayName = "SJogging"),
-	Ers_SSprinting UMETA(DisplayName = "SSprinting"),
-	Ers_CIdling UMETA(DisplayName = "CIdling"),
-	Ers_CWalking UMETA(DisplayName = "CWalking"),
+	Ers_StandIdling UMETA(DisplayName = "StandIdling"),
+	Ers_StandWalking UMETA(DisplayName = "StandWalking"),
+	Ers_StandJogging UMETA(DisplayName = "StandJogging"),
+	Ers_StandSprinting UMETA(DisplayName = "StandSprinting"),
+	Ers_CrouchIdling UMETA(DisplayName = "CrouchIdling"),
+	Ers_CrouchWalking UMETA(DisplayName = "CrouchWalking"),
+	Ers_CrouchSprinting UMETA(DisplayName = "CrouchSprinting"),
 	Ers_NA UMETA(DisplayName = "NA"),
 	Ers_Max UMETA(DisplayName = "DefaultMax")
 };
@@ -63,19 +65,19 @@ public:
 		UCharacterMovementComponent* CharMovementComp;
 
 	//Parent Stances
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "States")
 	EParentStance ParentStance;
 	void SetParentStanceStatus(EParentStance Status);
 	EParentStance GetParentStanceStatus();
 	
 	// Stance Status
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "States")
 	EStanceStatus StanceStatus;
 	void SetStanceStatus(EStanceStatus Status);
 	EStanceStatus GetStanceStatus();
 	
 	// Request Stance
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "States")
 	ERequestStance RequestStance;
 	void SetRequestedStatus(ERequestStance RequestedStance);
 	ERequestStance GetRequestedStance();
@@ -108,10 +110,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Movement Properties")
 	float JogSpeed = 520.0f;
 	UPROPERTY(EditDefaultsOnly, Category = "Movement Properties")
-	float SprintSpeed = 900.0f;
+	float SprintSpeed = 950.0f;
 	UPROPERTY(EditDefaultsOnly, Category = "Movement Properties")
-	float CrouchSpeed = 175.0f;
+	float CrouchWalkSpeed = 175.0f;
+	UPROPERTY(EditDefaultsOnly, Category = "Movement Properties")
+	float CrouchSprintSpeed = 600.0f;
 		// Idle
+	UPROPERTY(VisibleInstanceOnly, Category = "Movement Properties")
 	bool bIdleCheck = true;
 	void IdleCheck();
 		// Walk
@@ -123,9 +128,9 @@ protected:
 	void Sprint();
 	void SprintReleased();
 		// Crouch
-	void RequestCrouch();
+	void RequestCrouchChange();
 	void AscilaCrouch();
-	void AscilaCrouchRelease();
+	void AscilaUnCrouch();
 	
 	
 public:

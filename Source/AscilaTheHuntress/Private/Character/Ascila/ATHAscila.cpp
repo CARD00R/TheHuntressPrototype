@@ -63,12 +63,9 @@ void AATHAscila::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 	PlayerInputComponent->BindAxis("LookUp", this, &AATHAscila::LookUp);
 	PlayerInputComponent->BindAxis("LookRight", this, &AATHAscila::LookRight);
 	//Action Mappings
-	PlayerInputComponent->BindAction("Walk", IE_Pressed, this, &AATHAscila::RequestWalk);
-	PlayerInputComponent->BindAction("Walk", IE_Released, this, &AATHAscila::WalkReleased);
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &AATHAscila::RequestSprint);
 	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &AATHAscila::SprintReleased);
-	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AATHAscila::RequestCrouch);
-	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &AATHAscila::AscilaCrouchRelease);
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AATHAscila::RequestCrouchChange);
 }
 
 #pragma region  Input
@@ -82,27 +79,38 @@ void AATHAscila::MoveForward(float value)
 
 		if(ParentStance == EParentStance::Eps_Standing)
 		{
-			if(StanceStatus == EStanceStatus::Ess_SSprinting)
+			if(StanceStatus == EStanceStatus::Ess_StandSprinting && value > 0)
 			{
 				
 			}
-			else if(StanceStatus == EStanceStatus::Ess_SWalking)
+			else if(StanceStatus == EStanceStatus::Ess_StandWalking)
 			{
 				
 			}
 			else
 			{
-				SetStanceStatus(EStanceStatus::Ess_SJogging);
+				SetStanceStatus(EStanceStatus::Ess_StandJogging);
 			}
 		}
 		else if(ParentStance == EParentStance::Eps_Crouching)
 		{
-			SetStanceStatus(EStanceStatus::Ess_CWalking);
+			if(StanceStatus == EStanceStatus::Ess_CrouchSprinting && value > 0)
+			{
+				
+			}
+			else
+			{
+				SetStanceStatus(EStanceStatus::Ess_CrouchWalking);
+			}
 		}
+		
+		bIdleCheck = true;
 	}
 	// Not pressing forward
 	else
 	{
+		bIsMovingForward = false;
+		
 		// not moving forward and right
 		if (!bIsMovingForward && !bIsMovingRight)
 		{
@@ -111,7 +119,7 @@ void AATHAscila::MoveForward(float value)
 		}
 		else
 		{
-			bIdleCheck = true;
+			
 		}
 	}
 	
@@ -125,12 +133,18 @@ void AATHAscila::MoveRight(float value)
 
 		if (ParentStance == EParentStance::Eps_Standing)
 		{
-			SetStanceStatus(EStanceStatus::Ess_SJogging);
+			SetStanceStatus(EStanceStatus::Ess_StandJogging);
 		}
 		else if (ParentStance == EParentStance::Eps_Crouching)
 		{
-			SetStanceStatus(EStanceStatus::Ess_CWalking);
+			SetStanceStatus(EStanceStatus::Ess_CrouchWalking);
 		}
+
+		bIdleCheck = true;
+	}
+	else
+	{
+		bIsMovingRight = false;
 	}
 	
 	AddMovementInput(GetActorRightVector()* value);
@@ -147,9 +161,9 @@ void AATHAscila::RequestWalk()
 {
 	if (ParentStance != EParentStance::Eps_Dead)
 	{
-		if (StanceStatus != EStanceStatus::Ess_SWalking)
+		if (StanceStatus != EStanceStatus::Ess_StandWalking)
 		{
-			if (StanceStatus != EStanceStatus::Ess_CIdling || GetStanceStatus() != EStanceStatus::Ess_CWalking)
+			if (StanceStatus != EStanceStatus::Ess_CrouchIdling || GetStanceStatus() != EStanceStatus::Ess_CrouchWalking)
 			{
 				if(ParentStance != EParentStance::Eps_Rolling)
 				{
@@ -157,7 +171,7 @@ void AATHAscila::RequestWalk()
 				}
 				else
 				{
-					SetRequestedStatus(ERequestStance::Ers_SWalking);
+					SetRequestedStatus(ERequestStance::Ers_StandWalking);
 				}
 			}
 
@@ -167,20 +181,20 @@ void AATHAscila::RequestWalk()
 void AATHAscila::Walk()
 {
 	SetParentStanceStatus(EParentStance::Eps_Standing);
-	SetStanceStatus(EStanceStatus::Ess_SWalking);
+	SetStanceStatus(EStanceStatus::Ess_StandWalking);
 	SetRequestedStatus(ERequestStance::Ers_NA);
 }
 void AATHAscila::WalkReleased()
 {
-	if(StanceStatus == EStanceStatus::Ess_SWalking)
+	if(StanceStatus == EStanceStatus::Ess_StandWalking)
 	{
 		if(bIsMovingForward || bIsMovingRight)
 		{
-			SetStanceStatus(EStanceStatus::Ess_SJogging);
+			SetStanceStatus(EStanceStatus::Ess_StandJogging);
 		}
 		else
 		{
-			SetStanceStatus(EStanceStatus::Ess_SIdling);
+			SetStanceStatus(EStanceStatus::Ess_StandIdling);
 		}
 		
 	}
@@ -190,17 +204,28 @@ void AATHAscila::RequestSprint()
 
 	if (ParentStance != EParentStance::Eps_Dead)
 	{
-		if (StanceStatus != EStanceStatus::Ess_SSprinting)
+		if (StanceStatus != EStanceStatus::Ess_StandSprinting || StanceStatus != EStanceStatus::Ess_CrouchSprinting)
 		{
-			if(StanceStatus != EStanceStatus::Ess_SIdling)
+			if(StanceStatus != EStanceStatus::Ess_StandIdling || StanceStatus != EStanceStatus::Ess_CrouchIdling)
 			{
 				if (ParentStance != EParentStance::Eps_Rolling)
 				{
-					Sprint();
+					if(bIsMovingForward && !bIsMovingRight)
+					{
+						Sprint();
+					}
 				}
 				else
 				{
-					SetRequestedStatus(ERequestStance::Ers_SSprinting);
+					if(ParentStance == EParentStance::Eps_Standing)
+					{
+						SetRequestedStatus(ERequestStance::Ers_StandSprinting);
+					}
+					else
+					{
+						SetRequestedStatus(ERequestStance::Ers_CrouchSprinting);
+					}
+
 				}
 			}
 		}
@@ -208,72 +233,121 @@ void AATHAscila::RequestSprint()
 }
 void AATHAscila::Sprint()
 {
-	SetParentStanceStatus(EParentStance::Eps_Standing);
-	SetStanceStatus(EStanceStatus::Ess_SSprinting);
-	SetRequestedStatus(ERequestStance::Ers_NA);
-	UE_LOG(LogTemp, Error, TEXT("SPRINT"));
+	if(ParentStance == EParentStance::Eps_Standing)
+	{
+		SetStanceStatus(EStanceStatus::Ess_StandSprinting);
+		SetRequestedStatus(ERequestStance::Ers_NA);
+	}
+	else if(ParentStance == EParentStance::Eps_Crouching)
+	{
+		SetStanceStatus(EStanceStatus::Ess_CrouchSprinting);
+		SetRequestedStatus(ERequestStance::Ers_NA);
+	}
+	
 }
 void AATHAscila::SprintReleased()
 {
-	if(bIsMovingForward)
+	if(StanceStatus == EStanceStatus::Ess_StandSprinting)
 	{
-		SetStanceStatus(EStanceStatus::Ess_SJogging);
-	}
-	else
-	{
-		SetStanceStatus(EStanceStatus::Ess_SIdling);
-	}
-
-}
-void AATHAscila::RequestCrouch()
-{
-	if (ParentStance != EParentStance::Eps_Dead)
-	{
-		if (ParentStance != EParentStance::Eps_Rolling)
+		if (bIsMovingForward)
 		{
-			AscilaCrouch();
+			SetStanceStatus(EStanceStatus::Ess_StandJogging);
 		}
 		else
 		{
-			if (bIsMovingRight || bIsMovingForward)
+			SetStanceStatus(EStanceStatus::Ess_StandIdling);
+		}
+
+	}
+	else if(StanceStatus == EStanceStatus::Ess_CrouchSprinting)
+	{
+		if (bIsMovingForward)
+		{
+			SetStanceStatus(EStanceStatus::Ess_CrouchWalking);
+		}
+		else
+		{
+			SetStanceStatus(EStanceStatus::Ess_CrouchIdling);
+		}
+	}
+}
+void AATHAscila::RequestCrouchChange()
+{
+	// If crouching
+	if(ParentStance == EParentStance::Eps_Crouching)
+	{
+
+		if (ParentStance != EParentStance::Eps_Dead)
+		{
+			if (ParentStance != EParentStance::Eps_Rolling)
 			{
-				SetRequestedStatus(ERequestStance::Ers_CWalking);
+				AscilaUnCrouch();
 			}
 			else
 			{
-				SetRequestedStatus(ERequestStance::Ers_CIdling);
-			}
+				if (bIsMovingRight || bIsMovingForward)
+				{
+					SetRequestedStatus(ERequestStance::Ers_CrouchWalking);
+				}
+				else
+				{
+					SetRequestedStatus(ERequestStance::Ers_CrouchIdling);
+				}
 
+			}
 		}
 	}
+	// If not crouching
+	else
+	{
+		if (ParentStance != EParentStance::Eps_Dead)
+		{
+			if (ParentStance != EParentStance::Eps_Rolling)
+			{
+				AscilaCrouch();
+			}
+			else
+			{
+				if (bIsMovingRight || bIsMovingForward)
+				{
+					SetRequestedStatus(ERequestStance::Ers_CrouchWalking);
+				}
+				else
+				{
+					SetRequestedStatus(ERequestStance::Ers_CrouchIdling);
+				}
+
+			}
+		}
+	}
+	
 }
 void AATHAscila::AscilaCrouch()
 {
 	SetParentStanceStatus(EParentStance::Eps_Crouching);
 	
-	if(StanceStatus == EStanceStatus::Ess_SIdling)
+	if(StanceStatus == EStanceStatus::Ess_StandIdling)
 	{
-		SetStanceStatus(EStanceStatus::Ess_CIdling);
+		SetStanceStatus(EStanceStatus::Ess_CrouchIdling);
 	}
 	else
 	{
-		SetStanceStatus(EStanceStatus::Ess_CWalking);
+		SetStanceStatus(EStanceStatus::Ess_CrouchWalking);
 	}
 
 	SetRequestedStatus(ERequestStance::Ers_NA);
 }
-
-void AATHAscila::AscilaCrouchRelease()
+void AATHAscila::AscilaUnCrouch()
 {
 	if(ParentStance == EParentStance::Eps_Crouching)
 	{
-		if (StanceStatus == EStanceStatus::Ess_CIdling)
+		if (StanceStatus == EStanceStatus::Ess_CrouchIdling)
 		{
-			SetStanceStatus(EStanceStatus::Ess_SIdling);
+			SetStanceStatus(EStanceStatus::Ess_StandIdling);
 		}
 		else
 		{
-			SetStanceStatus(EStanceStatus::Ess_SJogging);
+			SetStanceStatus(EStanceStatus::Ess_StandJogging);
 		}
 		
 		SetParentStanceStatus(EParentStance::Eps_Standing);
@@ -304,23 +378,26 @@ void AATHAscila::SetStanceStatus(EStanceStatus Status)
 
 	switch (StanceStatus)
 	{
-	case EStanceStatus::Ess_SIdling:
+	case EStanceStatus::Ess_StandIdling:
 		SetCharacterSpeed(JogSpeed);
 		break;
-	case EStanceStatus::Ess_SWalking:
+	case EStanceStatus::Ess_StandWalking:
 		SetCharacterSpeed(WalkSpeed);
 		break;
-	case EStanceStatus::Ess_SJogging:
+	case EStanceStatus::Ess_StandJogging:
 		SetCharacterSpeed(JogSpeed);
 		break;
-	case EStanceStatus::Ess_SSprinting:
+	case EStanceStatus::Ess_StandSprinting:
 		SetCharacterSpeed(SprintSpeed);
 		break;
-	case EStanceStatus::Ess_CIdling:
-		SetCharacterSpeed(CrouchSpeed);
+	case EStanceStatus::Ess_CrouchIdling:
+		SetCharacterSpeed(CrouchWalkSpeed);
 		break;
-	case EStanceStatus::Ess_CWalking:
-		SetCharacterSpeed(CrouchSpeed);
+	case EStanceStatus::Ess_CrouchWalking:
+		SetCharacterSpeed(CrouchWalkSpeed);
+		break;
+	case EStanceStatus::Ess_CrouchSprinting:
+		SetCharacterSpeed(CrouchSprintSpeed);
 		break;
 	}
 }
@@ -357,10 +434,10 @@ void AATHAscila::IdleCheck()
 		switch (ParentStance)
 		{
 		case EParentStance::Eps_Standing:
-			SetStanceStatus(EStanceStatus::Ess_SIdling);
+			SetStanceStatus(EStanceStatus::Ess_StandIdling);
 			break;
 		case EParentStance::Eps_Crouching:
-			SetStanceStatus(EStanceStatus::Ess_CIdling);
+			SetStanceStatus(EStanceStatus::Ess_CrouchIdling);
 			break;
 		}
 
