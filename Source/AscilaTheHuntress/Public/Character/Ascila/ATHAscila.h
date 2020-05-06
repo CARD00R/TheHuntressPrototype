@@ -55,9 +55,9 @@ public:
 	AATHAscila();
 
 	// Components
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components|Camera")
 		USpringArmComponent* SpringArmComp;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components|Camera")
 		UCameraComponent* CameraComp;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		UCharacterMovementComponent* CharMovementComp;
@@ -81,16 +81,33 @@ public:
 	ERequestStance GetRequestedStance();
 	
 protected:
-	// Called when the game starts or when spawned
+	// Called when the game starts or	when spawned
 	virtual void BeginPlay() override;
 
 	// Initialisation Variables
 		// Mesh Component
-	FVector MeshInitialiseLocation = FVector(0, 0, -102.0);
-	FRotator MeshInitialiseRotation = FRotator(0, -90, 0);
-		// Capsule Component
-	float CapsuleRadius = 20.0f;
-	float CapsuleHalfHeight = 100;
+	FVector TargetMeshLocation = FVector(0, 0, 0);
+			// Stand
+	FVector StandMeshInitialiseLocation = FVector(-9, -4.5, -95.0);
+	FRotator StandMeshInitialiseRotation = FRotator(0, -90, 0);
+			// Crouch
+	FVector CrouchMeshInitialiseLocation = FVector(-5, -4.5, -72);
+	FVector CrouchSprintMeshInitialiseLocation = FVector(-20, 0, -76);
+			// Capsule Component
+	float StandCapsuleRadius = 24.0f;
+	float StandCapsuleHalfHeight = 93;
+	float CrouchCapsuleRadius = 30.0f;
+	float CrouchCapsuleHalfHeight = 70.0f;
+	float CrouchSprintCapsuleRadius = 30.0f;
+	float CrouchSprintCapsuleHalfHeight = 75.0f;
+	float TargetCapsuleRadius = 0.0f;
+	float TargetCapsuleHalfHeight = 0.0f;
+				// Capsule Speed Alpha changes
+	float HeightAlpha = 0.02f;
+	float RadiusAlpha = 0.02f;
+	float LocationAlpha = 0.02f;
+	UPROPERTY(EditAnywhere, Category = "Components|Capsule Properties")
+	float CapsuleMeshAlpha = 0.01f;
 
 	// Input
 	bool bIsMovingForward = false;
@@ -123,6 +140,8 @@ protected:
 	void RequestCrouchChange();
 	void AscilaCrouch();
 	void AscilaUnCrouch();
+	void CapsuleMeshProprtiesChange();
+	FTimerHandle CapsuleMeshProprtiesChangeTimer;
 
 	// Weapons
 	void RequestDrawChange();

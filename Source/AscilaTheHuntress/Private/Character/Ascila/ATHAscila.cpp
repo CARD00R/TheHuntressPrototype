@@ -8,6 +8,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "TimerManager.h"
 
 // Sets default values
 AATHAscila::AATHAscila()
@@ -15,7 +16,7 @@ AATHAscila::AATHAscila()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	GetMesh()->SetWorldLocationAndRotation(MeshInitialiseLocation, MeshInitialiseRotation);
+	GetMesh()->SetWorldLocationAndRotation(StandMeshInitialiseLocation, StandMeshInitialiseRotation);
 
 	//Spring Arm Component
 	SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
@@ -30,8 +31,8 @@ AATHAscila::AATHAscila()
 	//CameraComp->bUsePawnControlRotation = false;
 
 	//Capsule Component
-	GetCapsuleComponent()->SetCapsuleRadius(CapsuleRadius);
-	GetCapsuleComponent()->SetCapsuleHalfHeight(CapsuleHalfHeight);
+	GetCapsuleComponent()->SetCapsuleRadius(StandCapsuleRadius);
+	GetCapsuleComponent()->SetCapsuleHalfHeight(StandCapsuleHalfHeight);
 
 	CharMovementComp = GetCharacterMovement();
 
@@ -285,14 +286,36 @@ void AATHAscila::AscilaCrouch()
 		if (StanceStatus == EStanceStatus::Ess_StandIdling)
 		{
 			SetStanceStatus(EStanceStatus::Ess_CrouchIdling);
+			
+			//GetMesh()->SetRelativeLocation(CrouchMeshInitialiseLocation);
+			//GetCapsuleComponent()->SetCapsuleRadius(CrouchCapsuleRadius);
+			//GetCapsuleComponent()->SetCapsuleHalfHeight(CrouchCapsuleHalfHeight);
+			TargetMeshLocation = CrouchMeshInitialiseLocation;
+			TargetCapsuleRadius = CrouchCapsuleRadius;
+			TargetCapsuleHalfHeight = CrouchCapsuleHalfHeight;
+			GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshProprtiesChange, CapsuleMeshAlpha, true);
 		}
 		else if (StanceStatus == EStanceStatus::Ess_StandJogging)
 		{
 			SetStanceStatus(EStanceStatus::Ess_CrouchWalking);
+			//GetMesh()->SetRelativeLocation(CrouchMeshInitialiseLocation);
+			//GetCapsuleComponent()->SetCapsuleRadius(CrouchCapsuleRadius);
+			//GetCapsuleComponent()->SetCapsuleHalfHeight(CrouchCapsuleHalfHeight);
+			TargetMeshLocation = CrouchMeshInitialiseLocation;
+			TargetCapsuleRadius = CrouchCapsuleRadius;
+			TargetCapsuleHalfHeight = CrouchCapsuleHalfHeight;
+			GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshProprtiesChange, CapsuleMeshAlpha, true);
 		}
 		else
 		{
 			SetStanceStatus(EStanceStatus::Ess_CrouchSprinting);
+			//GetMesh()->SetRelativeLocation(CrouchSprintMeshInitialiseLocation);
+			//GetCapsuleComponent()->SetCapsuleRadius(CrouchSprintCapsuleRadius);
+			//GetCapsuleComponent()->SetCapsuleHalfHeight(CrouchSprintCapsuleHalfHeight);
+			TargetMeshLocation = CrouchSprintMeshInitialiseLocation;
+			TargetCapsuleRadius = CrouchSprintCapsuleRadius;
+			TargetCapsuleHalfHeight = CrouchSprintCapsuleHalfHeight;
+			GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshProprtiesChange, CapsuleMeshAlpha, true);
 		}
 		
 		SetParentStanceStatus(EParentStance::Eps_Crouching);
@@ -307,6 +330,7 @@ void AATHAscila::AscilaUnCrouch()
 		if (StanceStatus == EStanceStatus::Ess_CrouchIdling)
 		{
 			SetStanceStatus(EStanceStatus::Ess_StandIdling);
+			
 		}
 		else if(StanceStatus == EStanceStatus::Ess_CrouchWalking)
 		{
@@ -318,9 +342,27 @@ void AATHAscila::AscilaUnCrouch()
 		}
 		
 		SetParentStanceStatus(EParentStance::Eps_Standing);
+		//GetMesh()->SetRelativeLocation(StandMeshInitialiseLocation);
+		//GetCapsuleComponent()->SetCapsuleRadius(StandCapsuleRadius);
+		//GetCapsuleComponent()->SetCapsuleHalfHeight(StandCapsuleHalfHeight);
+		TargetMeshLocation = StandMeshInitialiseLocation;
+		TargetCapsuleRadius = StandCapsuleRadius;
+		TargetCapsuleHalfHeight = StandCapsuleHalfHeight;
+		GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshProprtiesChange, CapsuleMeshAlpha, true);
 	}
 	
 	SetRequestedStatus(ERequestStance::Ers_NA);
+}
+
+void AATHAscila::CapsuleMeshProprtiesChange()
+{
+	//GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()
+	//GetCapsuleComponent()->GetUnscaledCapsuleRadius()
+	//GetMesh()->GetRelativeLocation();
+	
+	GetCapsuleComponent()->SetCapsuleHalfHeight(FMath::Lerp(GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight(), TargetCapsuleHalfHeight, HeightAlpha));
+	GetCapsuleComponent()->SetCapsuleRadius(FMath::Lerp(GetCapsuleComponent()->GetUnscaledCapsuleRadius(), TargetCapsuleRadius, RadiusAlpha));
+	GetMesh()->SetRelativeLocation(FMath::Lerp(GetMesh()->GetRelativeLocation(), TargetMeshLocation, LocationAlpha));
 }
 
 #pragma endregion 
