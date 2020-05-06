@@ -23,7 +23,6 @@ UENUM(BlueprintType)
 enum class EStanceStatus : uint8
 {
 	Ess_StandIdling UMETA(DisplayName = "StandIdling"),
-	Ess_StandWalking UMETA(DisplayName = "StandWalking"),
 	Ess_StandJogging UMETA(DisplayName = "StandJogging"),
 	Ess_StandSprinting UMETA(DisplayName = "StandSprinting"),
 	Ess_CrouchIdling UMETA(DisplayName = "CrouchIdling"),
@@ -37,7 +36,6 @@ UENUM(BlueprintType)
 enum class ERequestStance : uint8
 {
 	Ers_StandIdling UMETA(DisplayName = "StandIdling"),
-	Ers_StandWalking UMETA(DisplayName = "StandWalking"),
 	Ers_StandJogging UMETA(DisplayName = "StandJogging"),
 	Ers_StandSprinting UMETA(DisplayName = "StandSprinting"),
 	Ers_CrouchIdling UMETA(DisplayName = "CrouchIdling"),
@@ -106,8 +104,6 @@ protected:
 		// Character Movement Speed
 	void SetCharacterSpeed(float Speed);
 	UPROPERTY(EditDefaultsOnly, Category = "Movement Properties")
-	float WalkSpeed = 145.0f;
-	UPROPERTY(EditDefaultsOnly, Category = "Movement Properties")
 	float JogSpeed = 520.0f;
 	UPROPERTY(EditDefaultsOnly, Category = "Movement Properties")
 	float SprintSpeed = 950.0f;
@@ -119,10 +115,6 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, Category = "Movement Properties")
 	bool bIdleCheck = true;
 	void IdleCheck();
-		// Walk
-	void RequestWalk();
-	void Walk();
-	void WalkReleased();
 		// Sprint
 	void RequestSprint();
 	void Sprint();
@@ -131,7 +123,11 @@ protected:
 	void RequestCrouchChange();
 	void AscilaCrouch();
 	void AscilaUnCrouch();
-	
+
+	// Weapons
+	void RequestDrawChange();
+	void DrawBow();
+	void UnDrawBow();
 	
 public:
 	// Called every frame

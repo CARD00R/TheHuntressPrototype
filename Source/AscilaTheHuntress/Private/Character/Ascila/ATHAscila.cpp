@@ -66,6 +66,7 @@ void AATHAscila::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &AATHAscila::RequestSprint);
 	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &AATHAscila::SprintReleased);
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AATHAscila::RequestCrouchChange);
+	//PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AATHAscila::RequestDrawBow);
 }
 
 #pragma region  Input
@@ -80,10 +81,6 @@ void AATHAscila::MoveForward(float value)
 		if(ParentStance == EParentStance::Eps_Standing)
 		{
 			if(StanceStatus == EStanceStatus::Ess_StandSprinting && value > 0)
-			{
-				
-			}
-			else if(StanceStatus == EStanceStatus::Ess_StandWalking)
 			{
 				
 			}
@@ -156,48 +153,6 @@ void AATHAscila::LookUp(float value)
 void AATHAscila::LookRight(float value)
 {
 	AddControllerYawInput(value);
-}
-void AATHAscila::RequestWalk()
-{
-	if (ParentStance != EParentStance::Eps_Dead)
-	{
-		if (StanceStatus != EStanceStatus::Ess_StandWalking)
-		{
-			if (StanceStatus != EStanceStatus::Ess_CrouchIdling || GetStanceStatus() != EStanceStatus::Ess_CrouchWalking)
-			{
-				if(ParentStance != EParentStance::Eps_Rolling)
-				{
-					Walk();
-				}
-				else
-				{
-					SetRequestedStatus(ERequestStance::Ers_StandWalking);
-				}
-			}
-
-		}
-	}
-}
-void AATHAscila::Walk()
-{
-	SetParentStanceStatus(EParentStance::Eps_Standing);
-	SetStanceStatus(EStanceStatus::Ess_StandWalking);
-	SetRequestedStatus(ERequestStance::Ers_NA);
-}
-void AATHAscila::WalkReleased()
-{
-	if(StanceStatus == EStanceStatus::Ess_StandWalking)
-	{
-		if(bIsMovingForward || bIsMovingRight)
-		{
-			SetStanceStatus(EStanceStatus::Ess_StandJogging);
-		}
-		else
-		{
-			SetStanceStatus(EStanceStatus::Ess_StandIdling);
-		}
-		
-	}
 }
 void AATHAscila::RequestSprint()
 {
@@ -324,17 +279,25 @@ void AATHAscila::RequestCrouchChange()
 }
 void AATHAscila::AscilaCrouch()
 {
-	SetParentStanceStatus(EParentStance::Eps_Crouching);
-	
-	if(StanceStatus == EStanceStatus::Ess_StandIdling)
+	if(ParentStance == EParentStance::Eps_Standing)
 	{
-		SetStanceStatus(EStanceStatus::Ess_CrouchIdling);
-	}
-	else
-	{
-		SetStanceStatus(EStanceStatus::Ess_CrouchWalking);
-	}
 
+		if (StanceStatus == EStanceStatus::Ess_StandIdling)
+		{
+			SetStanceStatus(EStanceStatus::Ess_CrouchIdling);
+		}
+		else if (StanceStatus == EStanceStatus::Ess_StandJogging)
+		{
+			SetStanceStatus(EStanceStatus::Ess_CrouchWalking);
+		}
+		else
+		{
+			SetStanceStatus(EStanceStatus::Ess_CrouchSprinting);
+		}
+		
+		SetParentStanceStatus(EParentStance::Eps_Crouching);
+	}
+	
 	SetRequestedStatus(ERequestStance::Ers_NA);
 }
 void AATHAscila::AscilaUnCrouch()
@@ -345,14 +308,19 @@ void AATHAscila::AscilaUnCrouch()
 		{
 			SetStanceStatus(EStanceStatus::Ess_StandIdling);
 		}
-		else
+		else if(StanceStatus == EStanceStatus::Ess_CrouchWalking)
 		{
 			SetStanceStatus(EStanceStatus::Ess_StandJogging);
+		}
+		else
+		{
+			SetStanceStatus(EStanceStatus::Ess_StandSprinting);
 		}
 		
 		SetParentStanceStatus(EParentStance::Eps_Standing);
 	}
-
+	
+	SetRequestedStatus(ERequestStance::Ers_NA);
 }
 
 #pragma endregion 
@@ -380,9 +348,6 @@ void AATHAscila::SetStanceStatus(EStanceStatus Status)
 	{
 	case EStanceStatus::Ess_StandIdling:
 		SetCharacterSpeed(JogSpeed);
-		break;
-	case EStanceStatus::Ess_StandWalking:
-		SetCharacterSpeed(WalkSpeed);
 		break;
 	case EStanceStatus::Ess_StandJogging:
 		SetCharacterSpeed(JogSpeed);

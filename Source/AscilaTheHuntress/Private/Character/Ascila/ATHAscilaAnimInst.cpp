@@ -10,11 +10,14 @@ void UATHAscilaAnimInst::NativeInitializeAnimation()
 	if (!AscilaPawn)
 	{
 		AscilaPawn = TryGetPawnOwner();
+		//
 	}
 }
 
 void UATHAscilaAnimInst::UpdateAnimationProperties(float DeltaTime)
 {
+	SetRootMotionMode(ERootMotionMode::RootMotionFromEverything);
+	
 	if (AscilaPawn)
 	{
 		//Calculate Movement Speed
