@@ -42,10 +42,29 @@ void UATHAscilaAnimInst::UpdateAnimationProperties(float DeltaTime)
 		{
 			//Sets AnimInst StanceStatus to the Character's
 			StanceStatus = AscilaCharacter->GetStanceStatus();
+
+			CalculatePitch(DeltaTime);
 		}
 	}
 	else
 	{
 		AscilaPawn = TryGetPawnOwner();
 	}
+}
+
+void UATHAscilaAnimInst::CalculatePitch(float DeltaTime)
+{
+	//Current Rotation
+	FRotator Current = FRotator(Pitch, Yaw, 0);
+	//The Difference between the control rotation(mouse) and the actor rotation
+	FRotator Delta = UKismetMathLibrary::NormalizedDeltaRotator(AscilaCharacter->GetControlRotation(), AscilaCharacter->GetActorRotation());
+	// Constantly reseting the value of the return so it can keep up with mouse movement
+	FRotator Return = UKismetMathLibrary::RInterpTo(Current, Delta, DeltaTime, 60);
+	// Clamping values to prevent unwanted rotation
+	Pitch = FMath::ClampAngle(Return.Pitch, -60, 60);
+	Yaw = FMath::ClampAngle(Return.Yaw, -60, 60);
+	// Setting character yaw/pitch
+	AscilaCharacter->SetPitch(Pitch);
+	AscilaCharacter->SetYaw(Yaw);
+
 }

@@ -70,7 +70,7 @@ void AATHAscila::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 	//PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AATHAscila::RequestDrawBow);
 }
 
-#pragma region  Input
+	#pragma region  Input
 
 void AATHAscila::MoveForward(float value)
 {
@@ -368,7 +368,7 @@ void AATHAscila::CapsuleMeshProprtiesChange()
 #pragma endregion 
 
 
-#pragma  region States
+	#pragma  region States
 
 // Parent Stance
 void AATHAscila::SetParentStanceStatus(EParentStance Status)
@@ -427,7 +427,7 @@ ERequestStance AATHAscila::GetRequestedStance()
 
 #pragma endregion 
 
-#pragma region Movement
+	#pragma region Movement
 
 void AATHAscila::SetCharacterSpeed(float Speed)
 {
@@ -454,3 +454,17 @@ void AATHAscila::IdleCheck()
 
 
 #pragma endregion 
+
+
+	#pragma region Weapons and Aiming
+
+void AATHAscila::SetYaw(float NewYaw)
+{
+	Yaw = NewYaw;
+}
+
+void AATHAscila::SetPitch(float NewPitch)
+{
+	Pitch = NewPitch;
+}
+	#pragma endregion 

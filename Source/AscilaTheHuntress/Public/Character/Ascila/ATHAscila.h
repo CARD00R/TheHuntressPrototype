@@ -79,6 +79,9 @@ public:
 	ERequestStance RequestStance;
 	void SetRequestedStatus(ERequestStance RequestedStance);
 	ERequestStance GetRequestedStance();
+
+	void SetYaw(float NewYaw);
+	void SetPitch(float NewPitch);
 	
 protected:
 	// Called when the game starts or	when spawned
@@ -144,6 +147,8 @@ protected:
 	FTimerHandle CapsuleMeshProprtiesChangeTimer;
 
 	// Weapons
+	float Pitch;
+	float Yaw;
 	void RequestDrawChange();
 	void DrawBow();
 	void UnDrawBow();
