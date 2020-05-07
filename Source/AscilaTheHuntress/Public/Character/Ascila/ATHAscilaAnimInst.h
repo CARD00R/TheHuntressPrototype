@@ -54,6 +54,10 @@ protected:
 	float Yaw;
 	void CalculatePitch(float DeltaTime);
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Aiming Properties")
+	bool bIsAiming;
+
+
 	
 public:
 	

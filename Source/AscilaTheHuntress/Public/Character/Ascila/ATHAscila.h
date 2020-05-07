@@ -23,6 +23,7 @@ UENUM(BlueprintType)
 enum class EStanceStatus : uint8
 {
 	Ess_StandIdling UMETA(DisplayName = "StandIdling"),
+	Ess_StandWalking UMETA(DisplayName = "StandWalking"),
 	Ess_StandJogging UMETA(DisplayName = "StandJogging"),
 	Ess_StandSprinting UMETA(DisplayName = "StandSprinting"),
 	Ess_CrouchIdling UMETA(DisplayName = "CrouchIdling"),
@@ -36,6 +37,7 @@ UENUM(BlueprintType)
 enum class ERequestStance : uint8
 {
 	Ers_StandIdling UMETA(DisplayName = "StandIdling"),
+	Ers_StandWalking UMETA(DisplayName = "StandWalking"),
 	Ers_StandJogging UMETA(DisplayName = "StandJogging"),
 	Ers_StandSprinting UMETA(DisplayName = "StandSprinting"),
 	Ers_CrouchIdling UMETA(DisplayName = "CrouchIdling"),
@@ -54,6 +56,7 @@ public:
 	// Sets default values for this character's properties
 	AATHAscila();
 
+	#pragma  region Components
 	// Components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components|Camera")
 		USpringArmComponent* SpringArmComp;
@@ -62,6 +65,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		UCharacterMovementComponent* CharMovementComp;
 
+	#pragma endregion
+	
+	#pragma region States
 	//Parent Stances
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "States")
 	EParentStance ParentStance;
@@ -79,14 +85,20 @@ public:
 	ERequestStance RequestStance;
 	void SetRequestedStatus(ERequestStance RequestedStance);
 	ERequestStance GetRequestedStance();
+#pragma endregion
 
+	#pragma region Weapons
+	// Weapons
 	void SetYaw(float NewYaw);
 	void SetPitch(float NewPitch);
+	bool GetIsAiming();
+	#pragma endregion
 	
 protected:
 	// Called when the game starts or	when spawned
 	virtual void BeginPlay() override;
 
+	#pragma region Mesh & Capsule Variables
 	// Initialisation Variables
 		// Mesh Component
 	FVector TargetMeshLocation = FVector(0, 0, 0);
@@ -111,6 +123,12 @@ protected:
 	float LocationAlpha = 0.02f;
 	UPROPERTY(EditAnywhere, Category = "Components|Capsule Properties")
 	float CapsuleMeshAlpha = 0.01f;
+	UPROPERTY(EditAnywhere, Category = "Components|Capsule Properties")
+	float CapsuleTolerance = 0.5f;
+
+	void CapsuleMeshPropertiesChange();
+	FTimerHandle CapsuleMeshProprtiesChangeTimer;
+	#pragma endregion 
 
 	// Input
 	bool bIsMovingForward = false;
@@ -120,6 +138,7 @@ protected:
 	void LookUp(float value);
 	void LookRight(float value);
 
+	#pragma region Movement Functions and Variables
 	// Movement
 		// Character Movement Speed
 	void SetCharacterSpeed(float Speed);
@@ -143,15 +162,27 @@ protected:
 	void RequestCrouchChange();
 	void AscilaCrouch();
 	void AscilaUnCrouch();
-	void CapsuleMeshProprtiesChange();
-	FTimerHandle CapsuleMeshProprtiesChangeTimer;
 
+	#pragma endregion
+	
 	// Weapons
+	UPROPERTY(VisibleInstanceOnly, Category = "Weapon Properties")
+	bool bIsAiming = false;
 	float Pitch;
 	float Yaw;
+	void RequestAim();
+	void RequestUnAim();
+	void Aimin();
+	void AimOut();
+	void ChangeCameraProperties();
+	FTimerHandle AimInHandle;
+	
 	void RequestDrawChange();
 	void DrawBow();
 	void UnDrawBow();
+
+	// Camera
+	void ChangeCameraSettings();
 	
 public:
 	// Called every frame

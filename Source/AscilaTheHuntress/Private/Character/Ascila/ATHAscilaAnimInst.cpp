@@ -42,7 +42,9 @@ void UATHAscilaAnimInst::UpdateAnimationProperties(float DeltaTime)
 		{
 			//Sets AnimInst StanceStatus to the Character's
 			StanceStatus = AscilaCharacter->GetStanceStatus();
-
+			bIsAiming = AscilaCharacter->GetIsAiming();
+			
+			//Calculations
 			CalculatePitch(DeltaTime);
 		}
 	}

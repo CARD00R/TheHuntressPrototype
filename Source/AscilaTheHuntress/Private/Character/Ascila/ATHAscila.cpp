@@ -9,6 +9,7 @@
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "TimerManager.h"
+#include "Math/UnrealMathUtility.h"
 
 // Sets default values
 AATHAscila::AATHAscila()
@@ -67,6 +68,9 @@ void AATHAscila::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &AATHAscila::RequestSprint);
 	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &AATHAscila::SprintReleased);
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AATHAscila::RequestCrouchChange);
+	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &AATHAscila::RequestAim);
+	PlayerInputComponent->BindAction("Aim", IE_Released, this, &AATHAscila::RequestUnAim);
+	
 	//PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AATHAscila::RequestDrawBow);
 }
 
@@ -157,31 +161,33 @@ void AATHAscila::LookRight(float value)
 }
 void AATHAscila::RequestSprint()
 {
-
 	if (ParentStance != EParentStance::Eps_Dead)
 	{
-		if (StanceStatus != EStanceStatus::Ess_StandSprinting || StanceStatus != EStanceStatus::Ess_CrouchSprinting)
+		if(ParentStance != EParentStance::Eps_InAir)
 		{
-			if(StanceStatus != EStanceStatus::Ess_StandIdling || StanceStatus != EStanceStatus::Ess_CrouchIdling)
+			if (StanceStatus != EStanceStatus::Ess_StandSprinting || StanceStatus != EStanceStatus::Ess_CrouchSprinting)
 			{
-				if (ParentStance != EParentStance::Eps_Rolling)
+				if (StanceStatus != EStanceStatus::Ess_StandIdling || StanceStatus != EStanceStatus::Ess_CrouchIdling)
 				{
-					if(bIsMovingForward && !bIsMovingRight)
+					if (ParentStance != EParentStance::Eps_Rolling)
 					{
-						Sprint();
-					}
-				}
-				else
-				{
-					if(ParentStance == EParentStance::Eps_Standing)
-					{
-						SetRequestedStatus(ERequestStance::Ers_StandSprinting);
+						if (bIsMovingForward && !bIsMovingRight)
+						{
+							Sprint();
+						}
 					}
 					else
 					{
-						SetRequestedStatus(ERequestStance::Ers_CrouchSprinting);
-					}
+						if (ParentStance == EParentStance::Eps_Standing)
+						{
+							SetRequestedStatus(ERequestStance::Ers_StandSprinting);
+						}
+						else
+						{
+							SetRequestedStatus(ERequestStance::Ers_CrouchSprinting);
+						}
 
+					}
 				}
 			}
 		}
@@ -235,21 +241,24 @@ void AATHAscila::RequestCrouchChange()
 
 		if (ParentStance != EParentStance::Eps_Dead)
 		{
-			if (ParentStance != EParentStance::Eps_Rolling)
+			if (ParentStance != EParentStance::Eps_InAir)
 			{
-				AscilaUnCrouch();
-			}
-			else
-			{
-				if (bIsMovingRight || bIsMovingForward)
+				if (ParentStance != EParentStance::Eps_Rolling)
 				{
-					SetRequestedStatus(ERequestStance::Ers_CrouchWalking);
+					AscilaUnCrouch();
 				}
 				else
 				{
-					SetRequestedStatus(ERequestStance::Ers_CrouchIdling);
-				}
+					if (bIsMovingRight || bIsMovingForward)
+					{
+						SetRequestedStatus(ERequestStance::Ers_CrouchWalking);
+					}
+					else
+					{
+						SetRequestedStatus(ERequestStance::Ers_CrouchIdling);
+					}
 
+				}
 			}
 		}
 	}
@@ -293,7 +302,7 @@ void AATHAscila::AscilaCrouch()
 			TargetMeshLocation = CrouchMeshInitialiseLocation;
 			TargetCapsuleRadius = CrouchCapsuleRadius;
 			TargetCapsuleHalfHeight = CrouchCapsuleHalfHeight;
-			GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshProprtiesChange, CapsuleMeshAlpha, true);
+			GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshPropertiesChange, CapsuleMeshAlpha, true);
 		}
 		else if (StanceStatus == EStanceStatus::Ess_StandJogging)
 		{
@@ -304,7 +313,7 @@ void AATHAscila::AscilaCrouch()
 			TargetMeshLocation = CrouchMeshInitialiseLocation;
 			TargetCapsuleRadius = CrouchCapsuleRadius;
 			TargetCapsuleHalfHeight = CrouchCapsuleHalfHeight;
-			GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshProprtiesChange, CapsuleMeshAlpha, true);
+			GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshPropertiesChange, CapsuleMeshAlpha, true);
 		}
 		else
 		{
@@ -315,7 +324,7 @@ void AATHAscila::AscilaCrouch()
 			TargetMeshLocation = CrouchSprintMeshInitialiseLocation;
 			TargetCapsuleRadius = CrouchSprintCapsuleRadius;
 			TargetCapsuleHalfHeight = CrouchSprintCapsuleHalfHeight;
-			GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshProprtiesChange, CapsuleMeshAlpha, true);
+			GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshPropertiesChange, CapsuleMeshAlpha, true);
 		}
 		
 		SetParentStanceStatus(EParentStance::Eps_Crouching);
@@ -348,25 +357,56 @@ void AATHAscila::AscilaUnCrouch()
 		TargetMeshLocation = StandMeshInitialiseLocation;
 		TargetCapsuleRadius = StandCapsuleRadius;
 		TargetCapsuleHalfHeight = StandCapsuleHalfHeight;
-		GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshProprtiesChange, CapsuleMeshAlpha, true);
+		GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshPropertiesChange, CapsuleMeshAlpha, true);
 	}
 	
 	SetRequestedStatus(ERequestStance::Ers_NA);
 }
 
-void AATHAscila::CapsuleMeshProprtiesChange()
+void AATHAscila::CapsuleMeshPropertiesChange()
 {
 	//GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()
 	//GetCapsuleComponent()->GetUnscaledCapsuleRadius()
 	//GetMesh()->GetRelativeLocation();
-	
-	GetCapsuleComponent()->SetCapsuleHalfHeight(FMath::Lerp(GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight(), TargetCapsuleHalfHeight, HeightAlpha));
-	GetCapsuleComponent()->SetCapsuleRadius(FMath::Lerp(GetCapsuleComponent()->GetUnscaledCapsuleRadius(), TargetCapsuleRadius, RadiusAlpha));
-	GetMesh()->SetRelativeLocation(FMath::Lerp(GetMesh()->GetRelativeLocation(), TargetMeshLocation, LocationAlpha));
+	bool IsEqualHalfeight = false;
+	bool IsEqualRadius = false;
+	bool IsLocation = false;
+
+	if(!(FMath::IsNearlyEqual(GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight(), TargetCapsuleHalfHeight,CapsuleTolerance)))
+	{
+		GetCapsuleComponent()->SetCapsuleHalfHeight(FMath::Lerp(GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight(), TargetCapsuleHalfHeight, HeightAlpha));
+	}
+	else
+	{
+		IsEqualHalfeight = true;
+	}
+	if(!(FMath::IsNearlyEqual(GetCapsuleComponent()->GetUnscaledCapsuleRadius(), TargetCapsuleRadius, CapsuleTolerance)))
+	{
+		GetCapsuleComponent()->SetCapsuleRadius(FMath::Lerp(GetCapsuleComponent()->GetUnscaledCapsuleRadius(), TargetCapsuleRadius, RadiusAlpha));
+	}
+	else
+	{
+		IsEqualRadius = true;
+	}	
+	if(FVector::Dist(GetMesh()->GetRelativeLocation(), TargetMeshLocation) > CapsuleTolerance)
+	{
+		GetMesh()->SetRelativeLocation(FMath::Lerp(GetMesh()->GetRelativeLocation(), TargetMeshLocation, LocationAlpha));
+	}
+	else
+	{
+		IsLocation = true;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Timer"));
+
+	if(IsEqualHalfeight && IsEqualRadius && IsLocation)
+	{
+		UE_LOG(LogTemp, Error, TEXT("STOP"));
+		GetWorldTimerManager().ClearTimer(CapsuleMeshProprtiesChangeTimer);
+	}
 }
 
 #pragma endregion 
-
 
 	#pragma  region States
 
@@ -467,4 +507,66 @@ void AATHAscila::SetPitch(float NewPitch)
 {
 	Pitch = NewPitch;
 }
+
+bool AATHAscila::GetIsAiming()
+{
+	return bIsAiming;
+
+}
+
+void AATHAscila::RequestAim()
+{
+	// also add jumping restriction and swimming
+	if (ParentStance != EParentStance::Eps_Dead)
+	{
+		if (ParentStance != EParentStance::Eps_Rolling)
+		{
+			if(ParentStance == EParentStance::Eps_Standing)
+			{
+				if(StanceStatus == EStanceStatus::Ess_StandSprinting)
+				{
+					SetStanceStatus(EStanceStatus::Ess_StandWalking);
+				}
+			}
+			else if (ParentStance == EParentStance::Eps_Crouching)
+			{
+				if (StanceStatus == EStanceStatus::Ess_CrouchSprinting)
+				{
+					SetStanceStatus(EStanceStatus::Ess_CrouchWalking);
+				}
+			}
+			
+			Aimin();
+		}
+		else
+		{
+
+		}
+	}
+}
+
+void AATHAscila::RequestUnAim()
+{
+	AimOut();
+}
+
+void AATHAscila::Aimin()
+{
+	bIsAiming = true;
+}
+
+void AATHAscila::AimOut()
+{
+	bIsAiming = false;
+}
+
+
 	#pragma endregion 
+
+	#pragma  region Utilities
+
+void AATHAscila::ChangeCameraProperties()
+{
+	//bool 
+}
+	#pragma endregion
