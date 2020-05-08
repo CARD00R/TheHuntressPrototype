@@ -35,11 +35,16 @@ AATHAscila::AATHAscila()
 	GetCapsuleComponent()->SetCapsuleRadius(StandCapsuleRadius);
 	GetCapsuleComponent()->SetCapsuleHalfHeight(StandCapsuleHalfHeight);
 
+	// Movement Component
 	CharMovementComp = GetCharacterMovement();
 
 	CharMovementComp->GetNavAgentPropertiesRef().bCanCrouch = true;
 	CharMovementComp->GetNavAgentPropertiesRef().bCanJump = true;
 	CharMovementComp->MaxWalkSpeed = JogSpeed;
+
+	CharMovementComp->bUseControllerDesiredRotation = true;
+	CharMovementComp->RotationRate = DefaultRotationRate;
+	bUseControllerRotationYaw = false;
 }
 
 // Called when the game starts or when spawned
@@ -447,6 +452,8 @@ void AATHAscila::SetStanceStatus(EStanceStatus Status)
 		SetCharacterSpeed(CrouchSprintSpeed);
 		break;
 	}
+
+	ChangeRotationRate();
 }
 
 EStanceStatus AATHAscila::GetStanceStatus()
@@ -474,6 +481,17 @@ void AATHAscila::SetCharacterSpeed(float Speed)
 	CharMovementComp->MaxWalkSpeed = Speed;
 }
 
+void AATHAscila::ChangeRotationRate()
+{
+	if(StanceStatus == EStanceStatus::Ess_StandSprinting)
+	{
+		CharMovementComp->RotationRate = SprintingRotationRate;
+	}
+	else
+	{
+		CharMovementComp->RotationRate = DefaultRotationRate;
+	}
+}
 void AATHAscila::IdleCheck()
 {
 	if (bIdleCheck)
@@ -553,6 +571,7 @@ void AATHAscila::RequestUnAim()
 void AATHAscila::Aimin()
 {
 	bIsAiming = true;
+	
 }
 
 void AATHAscila::AimOut()

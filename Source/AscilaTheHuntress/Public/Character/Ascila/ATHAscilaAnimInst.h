@@ -56,8 +56,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Aiming Properties")
 	bool bIsAiming;
-
-
 	
 public:
 	

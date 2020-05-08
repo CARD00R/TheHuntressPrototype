@@ -10,7 +10,6 @@ void UATHAscilaAnimInst::NativeInitializeAnimation()
 	if (!AscilaPawn)
 	{
 		AscilaPawn = TryGetPawnOwner();
-		//
 	}
 }
 
@@ -36,7 +35,7 @@ void UATHAscilaAnimInst::UpdateAnimationProperties(float DeltaTime)
 		MovementSpeed = LateralSpeed.Size();
 
 		AscilaCharacter = Cast<AATHAscila>(AscilaPawn);
-
+		
 		// If character exists...		
 		if (AscilaCharacter != nullptr)
 		{
@@ -46,11 +45,13 @@ void UATHAscilaAnimInst::UpdateAnimationProperties(float DeltaTime)
 			
 			//Calculations
 			CalculatePitch(DeltaTime);
+
 		}
 	}
 	else
 	{
 		AscilaPawn = TryGetPawnOwner();
+		UE_LOG(LogTemp, Error, TEXT("No Character Found"));
 	}
 }
 
@@ -68,5 +69,4 @@ void UATHAscilaAnimInst::CalculatePitch(float DeltaTime)
 	// Setting character yaw/pitch
 	AscilaCharacter->SetPitch(Pitch);
 	AscilaCharacter->SetYaw(Yaw);
-
 }

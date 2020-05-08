@@ -29,9 +29,16 @@ enum class EStanceStatus : uint8
 	Ess_CrouchIdling UMETA(DisplayName = "CrouchIdling"),
 	Ess_CrouchWalking UMETA(DisplayName = "CrouchWalking"),
 	Ess_CrouchSprinting UMETA(DisplayName = "CrouchSprinting"),
-	Ess_InAir UMETA(DisplayName = "InAir"),
 	Ess_NA UMETA(DisplayName = "NA"),
 	Ess_Max UMETA(DisplayName = "DefaultMax")
+};
+UENUM(BlueprintType)
+enum class EBowStatus : uint8
+{
+	Ebs_PoweringShot UMETA(DisplayName = "PoweringShot"),
+	Ebs_FiringShot UMETA(DisplayName = "FiringShot"),
+	Ebs_NA UMETA(DisplayName = "NA"),
+	Ebs_Max UMETA(DisplayName = "DefaultMax")
 };
 UENUM(BlueprintType)
 enum class ERequestStance : uint8
@@ -140,6 +147,10 @@ protected:
 
 	#pragma region Movement Functions and Variables
 	// Movement
+		// Rotation
+	FRotator DefaultRotationRate = FRotator(0,1000,0);
+	FRotator SprintingRotationRate = FRotator(0, 310, 0);
+	void ChangeRotationRate();
 		// Character Movement Speed
 	void SetCharacterSpeed(float Speed);
 	UPROPERTY(EditDefaultsOnly, Category = "Movement Properties")
