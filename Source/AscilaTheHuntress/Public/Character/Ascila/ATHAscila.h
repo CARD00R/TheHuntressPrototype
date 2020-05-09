@@ -35,9 +35,10 @@ enum class EStanceStatus : uint8
 UENUM(BlueprintType)
 enum class EBowStatus : uint8
 {
+	Ebs_NA UMETA(DisplayName = "NA"),
+	Ebs_AimingReady UMETA(DisplayName = "AimingReady"),
 	Ebs_PoweringShot UMETA(DisplayName = "PoweringShot"),
 	Ebs_FiringShot UMETA(DisplayName = "FiringShot"),
-	Ebs_NA UMETA(DisplayName = "NA"),
 	Ebs_Max UMETA(DisplayName = "DefaultMax")
 };
 UENUM(BlueprintType)
@@ -50,6 +51,7 @@ enum class ERequestStance : uint8
 	Ers_CrouchIdling UMETA(DisplayName = "CrouchIdling"),
 	Ers_CrouchWalking UMETA(DisplayName = "CrouchWalking"),
 	Ers_CrouchSprinting UMETA(DisplayName = "CrouchSprinting"),
+	Ers_Aiming UMETA(DisplayName = "Aiming "),
 	Ers_NA UMETA(DisplayName = "NA"),
 	Ers_Max UMETA(DisplayName = "DefaultMax")
 };
@@ -86,6 +88,12 @@ public:
 	EStanceStatus StanceStatus;
 	void SetStanceStatus(EStanceStatus Status);
 	EStanceStatus GetStanceStatus();
+
+	// Stance Status
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "States")
+		EBowStatus BowStatus;
+	void SetBowStatus(EBowStatus Status);
+	EBowStatus GetBowStatus();
 	
 	// Request Stance
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "States")
@@ -178,6 +186,7 @@ protected:
 	
 	// Weapons
 	UPROPERTY(VisibleInstanceOnly, Category = "Weapon Properties")
+		// Aiming
 	bool bIsAiming = false;
 	float Pitch;
 	float Yaw;
@@ -185,12 +194,19 @@ protected:
 	void RequestUnAim();
 	void Aimin();
 	void AimOut();
+	void SetAimReadyValue();
+	UPROPERTY(EditInstanceOnly, Category = "Weapon Properties")
+	float AimReadyAlpha = 0.001f;
+	float CurrentAimReady = 0.0f;
+	FTimerHandle AimingReadyHandle; // When animation blending is finished then you are aim 'ready'
 	void ChangeCameraProperties();
-	FTimerHandle AimInHandle;
-	
+	FTimerHandle AimInHandle; // Camera Purposes
+		// Firing
 	void RequestDrawChange();
 	void DrawBow();
 	void UnDrawBow();
+	void RequestFire();
+	void Fire();
 
 	// Camera
 	void ChangeCameraSettings();

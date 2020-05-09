@@ -75,6 +75,8 @@ void AATHAscila::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AATHAscila::RequestCrouchChange);
 	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &AATHAscila::RequestAim);
 	PlayerInputComponent->BindAction("Aim", IE_Released, this, &AATHAscila::RequestUnAim);
+	PlayerInputComponent->BindAction("DrawArrow", IE_Pressed, this, &AATHAscila::RequestDrawChange);
+	PlayerInputComponent->BindAction("DrawArrow", IE_Released, this, &AATHAscila::RequestFire);
 	
 	//PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AATHAscila::RequestDrawBow);
 }
@@ -461,6 +463,17 @@ EStanceStatus AATHAscila::GetStanceStatus()
 	return StanceStatus;
 }
 
+// Bow Status
+void AATHAscila::SetBowStatus(EBowStatus Status)
+{
+	BowStatus = Status;
+}
+
+EBowStatus AATHAscila::GetBowStatus()
+{
+	return BowStatus;
+}
+
 // Requested Stance
 void AATHAscila::SetRequestedStatus(ERequestStance RequestedStance)
 {
@@ -472,7 +485,7 @@ ERequestStance AATHAscila::GetRequestedStance()
 	return RequestStance;
 }
 
-#pragma endregion 
+	#pragma endregion 
 
 	#pragma region Movement
 
@@ -511,7 +524,7 @@ void AATHAscila::IdleCheck()
 }
 
 
-#pragma endregion 
+	#pragma endregion 
 
 
 	#pragma region Weapons and Aiming
@@ -529,7 +542,6 @@ void AATHAscila::SetPitch(float NewPitch)
 bool AATHAscila::GetIsAiming()
 {
 	return bIsAiming;
-
 }
 
 void AATHAscila::RequestAim()
@@ -558,7 +570,7 @@ void AATHAscila::RequestAim()
 		}
 		else
 		{
-
+			//SetRequestedStatus(ERequeststance)
 		}
 	}
 }
@@ -571,15 +583,99 @@ void AATHAscila::RequestUnAim()
 void AATHAscila::Aimin()
 {
 	bIsAiming = true;
+	GetWorldTimerManager().SetTimer(AimingReadyHandle, this, &AATHAscila::SetAimReadyValue, AimReadyAlpha, true);
 	
 }
 
 void AATHAscila::AimOut()
 {
 	bIsAiming = false;
+	SetBowStatus(EBowStatus::Ebs_NA);
+	GetWorldTimerManager().SetTimer(AimingReadyHandle, this, &AATHAscila::SetAimReadyValue, AimReadyAlpha, true);
 }
 
+void AATHAscila::SetAimReadyValue()
+{
+	
+	if(bIsAiming)
+	{
+		if(!(FMath::IsNearlyEqual(CurrentAimReady, 100.0f,0.5f)))
+		{
+			CurrentAimReady = FMath::Lerp(CurrentAimReady, 100.0f, 0.02);
+		}
+		else
+		{
+			SetBowStatus(EBowStatus::Ebs_AimingReady);
+			GetWorldTimerManager().ClearTimer(AimingReadyHandle);
+		}
+	}
+	else
+	{
+		if (!(FMath::IsNearlyEqual(CurrentAimReady, 0, 0.5f)))
+		{
+			CurrentAimReady = FMath::Lerp(CurrentAimReady, 0.0f, 0.02);
+		}
+		else
+		{
+			GetWorldTimerManager().ClearTimer(AimingReadyHandle);
+		}
+	}
+}
 
+void AATHAscila::RequestDrawChange()
+{
+	// Shooting arrows makes you lose Health ? as a way to balance out otherwise you just continously shoot arrows ezpz?
+	if (ParentStance != EParentStance::Eps_Dead)
+	{
+		if (ParentStance != EParentStance::Eps_Rolling)
+		{
+			if(bIsAiming)
+			{
+				if(BowStatus == EBowStatus::Ebs_AimingReady)
+				{
+					DrawBow();
+				}
+			}
+		}
+		else
+		{
+			
+		}
+	}
+}
+
+void AATHAscila::DrawBow()
+{
+	SetBowStatus(EBowStatus::Ebs_PoweringShot);
+}
+void AATHAscila::UnDrawBow()
+{
+	SetBowStatus(EBowStatus::Ebs_NA);
+}
+void AATHAscila::RequestFire()
+{
+	if (ParentStance != EParentStance::Eps_Dead)
+	{
+		if (ParentStance != EParentStance::Eps_Rolling)
+		{
+			if (bIsAiming)
+			{
+				if (BowStatus == EBowStatus::Ebs_PoweringShot)
+				{
+					Fire();
+				}
+			}
+		}
+		else
+		{
+
+		}
+	}
+}
+void AATHAscila::Fire()
+{
+	SetBowStatus(EBowStatus::Ebs_FiringShot);
+}
 	#pragma endregion 
 
 	#pragma  region Utilities
@@ -588,4 +684,5 @@ void AATHAscila::ChangeCameraProperties()
 {
 	//bool 
 }
+
 	#pragma endregion
