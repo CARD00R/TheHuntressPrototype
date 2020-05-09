@@ -469,12 +469,10 @@ void AATHAscila::SetParentStanceStatus(EParentStance Status)
 {
 	ParentStance = Status;
 }
-
 EParentStance AATHAscila::GetParentStanceStatus()
 {
 	return ParentStance;
 }
-
 // Stance Status
 void AATHAscila::SetStanceStatus(EStanceStatus Status)
 {
@@ -518,29 +516,24 @@ void AATHAscila::SetStanceStatus(EStanceStatus Status)
 
 	ChangeRotationRate();
 }
-
 EStanceStatus AATHAscila::GetStanceStatus()
 {
 	return StanceStatus;
 }
-
 // Bow Status
 void AATHAscila::SetBowStatus(EBowStatus Status)
 {
 	BowStatus = Status;
 }
-
 EBowStatus AATHAscila::GetBowStatus()
 {
 	return BowStatus;
 }
-
 // Requested Stance
 void AATHAscila::SetRequestedStatus(ERequestStance RequestedStance)
 {
 	RequestStance = RequestedStance;
 }
-
 ERequestStance AATHAscila::GetRequestedStance()
 {
 	return RequestStance;
@@ -554,7 +547,6 @@ void AATHAscila::SetCharacterSpeed(float Speed)
 {
 	CharMovementComp->MaxWalkSpeed = Speed;
 }
-
 void AATHAscila::ChangeRotationRate()
 {
 	if(StanceStatus == EStanceStatus::Ess_StandSprinting)
@@ -569,7 +561,6 @@ void AATHAscila::ChangeRotationRate()
 		CharMovementComp->bUseControllerDesiredRotation = false;
 	}
 }
-
 void AATHAscila::IdleCheck()
 {
 	if (bIdleCheck)
@@ -597,17 +588,14 @@ void AATHAscila::SetYaw(float NewYaw)
 {
 	Yaw = NewYaw;
 }
-
 void AATHAscila::SetPitch(float NewPitch)
 {
 	Pitch = NewPitch;
 }
-
 float AATHAscila::GetMaxPitch()
 {
 	return MaxPitch;
 }
-
 float AATHAscila::GetMinPitch()
 {
 	return MinPitch;
@@ -617,7 +605,6 @@ bool AATHAscila::GetIsAiming()
 {
 	return bIsAiming;
 }
-
 void AATHAscila::RequestAim()
 {
 	// also add jumping restriction and swimming
@@ -648,25 +635,29 @@ void AATHAscila::RequestAim()
 		}
 	}
 }
-
 void AATHAscila::RequestUnAim()
 {
 	AimOut();
 }
-
 void AATHAscila::AimIn()
 {
 	bIsAiming = true;
 	SetStanceStatus(GetStanceStatus());
+	
+	if (!bIsArrowDrawn)
+	{
+		AimReadyAlpha = 0.003f;
+		PlayAnimMontage(DrawArrowMontage, 1.0f, NAME_None);
+	}
+	else
+	{
+		AimReadyAlpha = 0.001f;
+	}
+	
 	GetWorldTimerManager().SetTimer(AimingReadyHandle, this, &AATHAscila::SetAimReadyValue, AimReadyAlpha, true);
 
 	//SpringArmComp->SocketOffset = SpringCompSocketAimOffset;
-	if(!bIsArrowDrawn)
-	{
-		PlayAnimMontage(DrawArrowMontage, 1.0f, NAME_None);
-	}
 }
-
 void AATHAscila::AimOut()
 {
 	bIsAiming = false;
@@ -675,7 +666,6 @@ void AATHAscila::AimOut()
 	//SpringArmComp->SocketOffset = SpringCompSocketDefaultOffset;
 	SetStanceStatus(GetStanceStatus());
 }
-
 void AATHAscila::SetAimReadyValue()
 {
 	
@@ -693,7 +683,7 @@ void AATHAscila::SetAimReadyValue()
 	}
 	else
 	{
-		if (!(FMath::IsNearlyEqual(CurrentAimReady, 0, 0.5f)))
+		if (!(FMath::IsNearlyEqual(CurrentAimReady, 0.0f, 0.5f)))
 		{
 			CurrentAimReady = FMath::Lerp(CurrentAimReady, 0.0f, 0.02);
 		}
@@ -725,17 +715,14 @@ void AATHAscila::RequestDrawChange()
 		}
 	}
 }
-
 void AATHAscila::DrawBow()
 {
 	SetBowStatus(EBowStatus::Ebs_PoweringShot);
 }
-
 void AATHAscila::UnDrawBow()
 {
 	SetBowStatus(EBowStatus::Ebs_NA);
 }
-
 void AATHAscila::RequestFire()
 {
 	if (ParentStance != EParentStance::Eps_Dead)
@@ -756,10 +743,10 @@ void AATHAscila::RequestFire()
 		}
 	}
 }
-
 void AATHAscila::Fire()
 {
 	SetBowStatus(EBowStatus::Ebs_FiringShot);
+	PlayAnimMontage(FireArrowMontage, 1.0f, NAME_None);
 }
 	#pragma endregion 
 

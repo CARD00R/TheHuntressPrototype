@@ -78,25 +78,25 @@ public:
 	
 	#pragma region States
 	//Parent Stances
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "States")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "States")
 	EParentStance ParentStance;
 	void SetParentStanceStatus(EParentStance Status);
 	EParentStance GetParentStanceStatus();
 	
 	// Stance Status
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "States")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "States")
 	EStanceStatus StanceStatus;
 	void SetStanceStatus(EStanceStatus Status);
 	EStanceStatus GetStanceStatus();
 
 	// Stance Status
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "States")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "States")
 		EBowStatus BowStatus;
 	void SetBowStatus(EBowStatus Status);
 	EBowStatus GetBowStatus();
 	
 	// Request Stance
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "States")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "States")
 	ERequestStance RequestStance;
 	void SetRequestedStatus(ERequestStance RequestedStance);
 	ERequestStance GetRequestedStance();
@@ -219,8 +219,10 @@ protected:
 	void RequestFire();
 	void Fire();
 	bool bIsArrowDrawn = false;
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon Properties || Montages")
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Properties|Montages")
 	UAnimMontage* DrawArrowMontage;
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Properties|Montages")
+	UAnimMontage* FireArrowMontage;
 	#pragma endregion
 	
 	// Camera
