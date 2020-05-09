@@ -57,6 +57,9 @@ void UATHAscilaAnimInst::UpdateAnimationProperties(float DeltaTime)
 
 void UATHAscilaAnimInst::CalculatePitch(float DeltaTime)
 {
+	// Get Pitch Constraints
+	float MinPitch = AscilaCharacter->GetMinPitch();
+	float MaxPitch = AscilaCharacter->GetMaxPitch();
 	//Current Rotation
 	FRotator Current = FRotator(Pitch, Yaw, 0);
 	//The Difference between the control rotation(mouse) and the actor rotation
@@ -64,8 +67,8 @@ void UATHAscilaAnimInst::CalculatePitch(float DeltaTime)
 	// Constantly reseting the value of the return so it can keep up with mouse movement
 	FRotator Return = UKismetMathLibrary::RInterpTo(Current, Delta, DeltaTime, 60);
 	// Clamping values to prevent unwanted rotation
-	Pitch = FMath::ClampAngle(Return.Pitch, -60, 60);
-	Yaw = FMath::ClampAngle(Return.Yaw, -60, 60);
+	Pitch = FMath::ClampAngle(Return.Pitch, MinPitch, MaxPitch);
+	Yaw = FMath::ClampAngle(Return.Yaw, MinPitch, MaxPitch);
 	// Setting character yaw/pitch
 	AscilaCharacter->SetPitch(Pitch);
 	AscilaCharacter->SetYaw(Yaw);

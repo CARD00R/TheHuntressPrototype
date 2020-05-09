@@ -106,6 +106,8 @@ public:
 	// Weapons
 	void SetYaw(float NewYaw);
 	void SetPitch(float NewPitch);
+	float GetMaxPitch();
+	float GetMinPitch();
 	bool GetIsAiming();
 	#pragma endregion
 	
@@ -118,11 +120,11 @@ protected:
 		// Mesh Component
 	FVector TargetMeshLocation = FVector(0, 0, 0);
 			// Stand
-	FVector StandMeshInitialiseLocation = FVector(-9, -4.5, -95.0);
+	FVector StandMeshInitialiseLocation = FVector(-9, -4.5, -99.0);
 	FRotator StandMeshInitialiseRotation = FRotator(0, -90, 0);
 			// Crouch
-	FVector CrouchMeshInitialiseLocation = FVector(-5, -4.5, -72);
-	FVector CrouchSprintMeshInitialiseLocation = FVector(-20, 0, -76);
+	FVector CrouchMeshInitialiseLocation = FVector(-5, -4.5, -77);
+	FVector CrouchSprintMeshInitialiseLocation = FVector(-20, 0, -80);
 			// Capsule Component
 	float StandCapsuleRadius = 24.0f;
 	float StandCapsuleHalfHeight = 93;
@@ -156,11 +158,13 @@ protected:
 	#pragma region Movement Functions and Variables
 	// Movement
 		// Rotation
-	FRotator DefaultRotationRate = FRotator(0,1000,0);
+	//FRotator DefaultRotationRate = FRotator(0,1000,0);
 	FRotator SprintingRotationRate = FRotator(0, 310, 0);
 	void ChangeRotationRate();
 		// Character Movement Speed
 	void SetCharacterSpeed(float Speed);
+	UPROPERTY(EditInstanceOnly, Category = "Movement Properties")
+	float WalkSpeed = 130.0f;
 	UPROPERTY(EditDefaultsOnly, Category = "Movement Properties")
 	float JogSpeed = 520.0f;
 	UPROPERTY(EditDefaultsOnly, Category = "Movement Properties")
@@ -184,15 +188,20 @@ protected:
 
 	#pragma endregion
 	
-	// Weapons
+	#pragma region Weapons
+
 	UPROPERTY(VisibleInstanceOnly, Category = "Weapon Properties")
-		// Aiming
+	// Aiming
 	bool bIsAiming = false;
 	float Pitch;
+	UPROPERTY(EditInstanceOnly, Category = "Weapon Properties")
+	float MaxPitch = 50.0f;
+	UPROPERTY(EditInstanceOnly, Category = "Weapon Properties")
+	float MinPitch = -70.0f;
 	float Yaw;
 	void RequestAim();
 	void RequestUnAim();
-	void Aimin();
+	void AimIn();
 	void AimOut();
 	void SetAimReadyValue();
 	UPROPERTY(EditInstanceOnly, Category = "Weapon Properties")
@@ -201,15 +210,26 @@ protected:
 	FTimerHandle AimingReadyHandle; // When animation blending is finished then you are aim 'ready'
 	void ChangeCameraProperties();
 	FTimerHandle AimInHandle; // Camera Purposes
-		// Firing
+		
+		
+	// Firing
 	void RequestDrawChange();
 	void DrawBow();
 	void UnDrawBow();
 	void RequestFire();
 	void Fire();
-
+	bool bIsArrowDrawn = false;
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Properties || Montages")
+	UAnimMontage* DrawArrowMontage;
+	#pragma endregion
+	
 	// Camera
 	void ChangeCameraSettings();
+	FVector SpringCompSocketAimOffset = FVector(0, 130.0, 80.0);
+	FVector SpringCompSocketDefaultOffset = FVector(0, 130.0, 80.0);
+
+	// Animation
+	float PlayAnimMontage(UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName);
 	
 public:
 	// Called every frame
@@ -217,4 +237,5 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
 };

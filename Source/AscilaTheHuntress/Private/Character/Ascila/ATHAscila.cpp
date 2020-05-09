@@ -10,6 +10,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "TimerManager.h"
 #include "Math/UnrealMathUtility.h"
+#include "Animation/AnimInstance.h"
 
 // Sets default values
 AATHAscila::AATHAscila()
@@ -23,8 +24,9 @@ AATHAscila::AATHAscila()
 	SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArmComp->bUsePawnControlRotation = true;
 	SpringArmComp->SetupAttachment(RootComponent);
+	//SpringArmComp->SocketOffset
 	//SpringArmComp->SetWorldLocation(SpringArmInitialiseLocation);
-	//SpringArmComp->SocketOffset = SpringArmInitialiseSocketOffset;
+	SpringArmComp->SocketOffset = SpringCompSocketDefaultOffset;
 
 	//Camera Component
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComp"));
@@ -42,15 +44,42 @@ AATHAscila::AATHAscila()
 	CharMovementComp->GetNavAgentPropertiesRef().bCanJump = true;
 	CharMovementComp->MaxWalkSpeed = JogSpeed;
 
-	CharMovementComp->bUseControllerDesiredRotation = true;
-	CharMovementComp->RotationRate = DefaultRotationRate;
-	bUseControllerRotationYaw = false;
+	CharMovementComp->bUseControllerDesiredRotation = false;
+	bUseControllerRotationYaw = true;
 }
 
 // Called when the game starts or when spawned
 void AATHAscila::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+float AATHAscila::PlayAnimMontage(UAnimMontage * AnimMontage, float InPlayRate, FName StartSectionName)
+{
+
+	UAnimInstance* AnimInstance;
+
+	if (GetMesh())
+	{
+		AnimInstance = GetMesh()->GetAnimInstance();
+	}
+	else
+	{
+		AnimInstance = nullptr;
+	}
+
+	if (AnimMontage && AnimInstance)
+	{
+		float const Duration = AnimInstance->Montage_Play(AnimMontage, InPlayRate);
+
+		// Start at a given Section if given
+		if (StartSectionName != NAME_None)
+		{
+			AnimInstance->Montage_JumpToSection(StartSectionName, AnimMontage);
+		}
+		return Duration;
+	}
+	return 0.f;
 }
 
 // Called every frame
@@ -96,6 +125,7 @@ void AATHAscila::MoveForward(float value)
 			{
 				
 			}
+			
 			else
 			{
 				SetStanceStatus(EStanceStatus::Ess_StandJogging);
@@ -160,7 +190,24 @@ void AATHAscila::MoveRight(float value)
 }
 void AATHAscila::LookUp(float value)
 {
-	AddControllerPitchInput(value);
+	if (Pitch != MaxPitch && Pitch != MinPitch)
+	{
+		AddControllerPitchInput(value);
+	}
+	else if (Pitch != MaxPitch)
+	{
+		if (value < 0)
+		{
+			AddControllerPitchInput(value);
+		}
+	}
+	else if (Pitch != MinPitch)
+	{
+		if (value > 0)
+		{
+			AddControllerPitchInput(value);
+		}
+	}
 }
 void AATHAscila::LookRight(float value)
 {
@@ -436,10 +483,24 @@ void AATHAscila::SetStanceStatus(EStanceStatus Status)
 	switch (StanceStatus)
 	{
 	case EStanceStatus::Ess_StandIdling:
-		SetCharacterSpeed(JogSpeed);
+		if(bIsAiming)
+		{
+			SetCharacterSpeed(WalkSpeed);
+		}
+		else
+		{
+			SetCharacterSpeed(JogSpeed);
+		}
 		break;
 	case EStanceStatus::Ess_StandJogging:
-		SetCharacterSpeed(JogSpeed);
+		if (bIsAiming)
+		{
+			SetCharacterSpeed(WalkSpeed);
+		}
+		else
+		{
+			SetCharacterSpeed(JogSpeed);
+		}
 		break;
 	case EStanceStatus::Ess_StandSprinting:
 		SetCharacterSpeed(SprintSpeed);
@@ -498,13 +559,17 @@ void AATHAscila::ChangeRotationRate()
 {
 	if(StanceStatus == EStanceStatus::Ess_StandSprinting)
 	{
+		bUseControllerRotationYaw = false;
+		CharMovementComp->bUseControllerDesiredRotation = true;
 		CharMovementComp->RotationRate = SprintingRotationRate;
 	}
 	else
 	{
-		CharMovementComp->RotationRate = DefaultRotationRate;
+		bUseControllerRotationYaw = true;
+		CharMovementComp->bUseControllerDesiredRotation = false;
 	}
 }
+
 void AATHAscila::IdleCheck()
 {
 	if (bIdleCheck)
@@ -523,7 +588,6 @@ void AATHAscila::IdleCheck()
 	}
 }
 
-
 	#pragma endregion 
 
 
@@ -537,6 +601,16 @@ void AATHAscila::SetYaw(float NewYaw)
 void AATHAscila::SetPitch(float NewPitch)
 {
 	Pitch = NewPitch;
+}
+
+float AATHAscila::GetMaxPitch()
+{
+	return MaxPitch;
+}
+
+float AATHAscila::GetMinPitch()
+{
+	return MinPitch;
 }
 
 bool AATHAscila::GetIsAiming()
@@ -566,7 +640,7 @@ void AATHAscila::RequestAim()
 				}
 			}
 			
-			Aimin();
+			AimIn();
 		}
 		else
 		{
@@ -580,11 +654,17 @@ void AATHAscila::RequestUnAim()
 	AimOut();
 }
 
-void AATHAscila::Aimin()
+void AATHAscila::AimIn()
 {
 	bIsAiming = true;
+	SetStanceStatus(GetStanceStatus());
 	GetWorldTimerManager().SetTimer(AimingReadyHandle, this, &AATHAscila::SetAimReadyValue, AimReadyAlpha, true);
-	
+
+	//SpringArmComp->SocketOffset = SpringCompSocketAimOffset;
+	if(!bIsArrowDrawn)
+	{
+		PlayAnimMontage(DrawArrowMontage, 1.0f, NAME_None);
+	}
 }
 
 void AATHAscila::AimOut()
@@ -592,6 +672,8 @@ void AATHAscila::AimOut()
 	bIsAiming = false;
 	SetBowStatus(EBowStatus::Ebs_NA);
 	GetWorldTimerManager().SetTimer(AimingReadyHandle, this, &AATHAscila::SetAimReadyValue, AimReadyAlpha, true);
+	//SpringArmComp->SocketOffset = SpringCompSocketDefaultOffset;
+	SetStanceStatus(GetStanceStatus());
 }
 
 void AATHAscila::SetAimReadyValue()
@@ -648,10 +730,12 @@ void AATHAscila::DrawBow()
 {
 	SetBowStatus(EBowStatus::Ebs_PoweringShot);
 }
+
 void AATHAscila::UnDrawBow()
 {
 	SetBowStatus(EBowStatus::Ebs_NA);
 }
+
 void AATHAscila::RequestFire()
 {
 	if (ParentStance != EParentStance::Eps_Dead)
@@ -672,6 +756,7 @@ void AATHAscila::RequestFire()
 		}
 	}
 }
+
 void AATHAscila::Fire()
 {
 	SetBowStatus(EBowStatus::Ebs_FiringShot);
