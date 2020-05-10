@@ -219,6 +219,7 @@ protected:
 	void RequestFire();
 	void Fire();
 	bool bIsArrowDrawn = false;
+	void DrawArrow();
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Properties|Montages")
 	UAnimMontage* DrawArrowMontage;
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Properties|Montages")
@@ -232,6 +233,7 @@ protected:
 
 	// Animation
 	float PlayAnimMontage(UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName);
+	void StopAnimMontagePlaying(UAnimMontage* AnimMontage);
 	
 public:
 	// Called every frame
@@ -240,4 +242,7 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	// Weapons
+	void ReDrawArrow();
+	void SetArrowDrawnVariable(bool isArrowDrawn);
 };

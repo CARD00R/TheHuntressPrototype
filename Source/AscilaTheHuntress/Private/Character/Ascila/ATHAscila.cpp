@@ -82,6 +82,30 @@ float AATHAscila::PlayAnimMontage(UAnimMontage * AnimMontage, float InPlayRate, 
 	return 0.f;
 }
 
+void AATHAscila::StopAnimMontagePlaying(UAnimMontage* AnimMontage)
+{
+
+	UAnimInstance* AnimInstance;
+
+	if (GetMesh())
+	{
+		AnimInstance = GetMesh()->GetAnimInstance();
+	}
+	else
+	{
+		AnimInstance = nullptr;
+	}
+	if (AnimMontage && AnimInstance)
+	{
+		if(AnimInstance->Montage_IsPlaying(AnimMontage))
+		{
+			AnimInstance->Montage_Stop(0.25f, AnimMontage);
+		}
+		
+	}
+}
+
+
 // Called every frame
 void AATHAscila::Tick(float DeltaTime)
 {
@@ -646,8 +670,7 @@ void AATHAscila::AimIn()
 	
 	if (!bIsArrowDrawn)
 	{
-		AimReadyAlpha = 0.003f;
-		PlayAnimMontage(DrawArrowMontage, 1.0f, NAME_None);
+		DrawArrow();
 	}
 	else
 	{
@@ -664,7 +687,9 @@ void AATHAscila::AimOut()
 	SetBowStatus(EBowStatus::Ebs_NA);
 	GetWorldTimerManager().SetTimer(AimingReadyHandle, this, &AATHAscila::SetAimReadyValue, AimReadyAlpha, true);
 	//SpringArmComp->SocketOffset = SpringCompSocketDefaultOffset;
+	StopAnimMontagePlaying(DrawArrowMontage);
 	SetStanceStatus(GetStanceStatus());
+	
 }
 void AATHAscila::SetAimReadyValue()
 {
@@ -678,6 +703,7 @@ void AATHAscila::SetAimReadyValue()
 		else
 		{
 			SetBowStatus(EBowStatus::Ebs_AimingReady);
+			bIsArrowDrawn = true;
 			GetWorldTimerManager().ClearTimer(AimingReadyHandle);
 		}
 	}
@@ -723,6 +749,24 @@ void AATHAscila::UnDrawBow()
 {
 	SetBowStatus(EBowStatus::Ebs_NA);
 }
+void AATHAscila::DrawArrow()
+{
+	AimReadyAlpha = 0.003f;
+	PlayAnimMontage(DrawArrowMontage, 1.0f, NAME_None);
+	GetWorldTimerManager().SetTimer(AimingReadyHandle, this, &AATHAscila::SetAimReadyValue, AimReadyAlpha, true);
+}
+void AATHAscila::ReDrawArrow()
+{
+	AimReadyAlpha = 0.003f;
+	PlayAnimMontage(DrawArrowMontage, 1.0f, NAME_None);
+	CurrentAimReady = 0;
+	GetWorldTimerManager().SetTimer(AimingReadyHandle, this, &AATHAscila::SetAimReadyValue, AimReadyAlpha, true);
+}
+void AATHAscila::SetArrowDrawnVariable(bool isArrowDrawn)
+{
+	bIsArrowDrawn = isArrowDrawn;
+}
+
 void AATHAscila::RequestFire()
 {
 	if (ParentStance != EParentStance::Eps_Dead)
@@ -747,6 +791,7 @@ void AATHAscila::Fire()
 {
 	SetBowStatus(EBowStatus::Ebs_FiringShot);
 	PlayAnimMontage(FireArrowMontage, 1.0f, NAME_None);
+	
 }
 	#pragma endregion 
 
