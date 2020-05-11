@@ -4,6 +4,7 @@
 #include "Character/Ascila/ATHAscilaAnimInst.h"
 #include "Character/Ascila/ATHAscila.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "TimerManager.h"
 
 void UATHAscilaAnimInst::NativeInitializeAnimation()
 {
@@ -41,11 +42,15 @@ void UATHAscilaAnimInst::UpdateAnimationProperties(float DeltaTime)
 		{
 			//Sets AnimInst StanceStatus to the Character's
 			StanceStatus = AscilaCharacter->GetStanceStatus();
+			ParentStance = AscilaCharacter->GetParentStanceStatus();
 			bIsAiming = AscilaCharacter->GetIsAiming();
+			bNeedsToLand = AscilaCharacter->GetNeedsToLand();
+			AscilaCharacter->SetShouldRollLand(bShouldLandRoll);
+			AscilaCharacter->SetShouldHardLand(bShouldHardLand);
 			
 			//Calculations
 			CalculatePitch(DeltaTime);
-
+			DetermineVerticalVelocityProperties();
 		}
 	}
 	else
@@ -72,4 +77,87 @@ void UATHAscilaAnimInst::CalculatePitch(float DeltaTime)
 	// Setting character yaw/pitch
 	AscilaCharacter->SetPitch(Pitch);
 	AscilaCharacter->SetYaw(Yaw);
+}
+
+void UATHAscilaAnimInst::DetermineVerticalVelocityProperties()
+{
+	StoredZLocation = AscilaCharacter->GetActorLocation().Z;
+
+	// Jumping or OnLand
+	if(VerticalVelocity >= 0)
+	{
+		if(VerticalVelocity == 0)
+		{
+			// On Land
+			GetWorld()->GetTimerManager().SetTimer(ResetFallHeightHandle, this, &UATHAscilaAnimInst::ResetFallHeight, 0.25f, false);
+		}
+		else
+		{
+			AscilaCharacter->SetParentStanceStatus(EParentStance::Eps_InAir);
+			AscilaCharacter->SetStanceStatus(EStanceStatus::Ess_StandJumping);
+		}
+
+		FallHeightStartingZ = StoredZLocation;
+	}
+	// Falling
+	else
+	{
+		if(GetWorld()->GetTimerManager().IsTimerActive(ResetFallHeightHandle))
+		{
+			GetWorld()->GetTimerManager().ClearTimer(ResetFallHeightHandle);
+			ResetFallHeight();
+		}
+		AscilaCharacter->SetParentStanceStatus(EParentStance::Eps_InAir);
+		// Adjust Capsule size maybe?
+		AscilaCharacter->SetStanceStatus(EStanceStatus::Ess_InAirJogFalling);
+		
+		FallHeightVarSetter();
+		AscilaCharacter->SetNeedsToLandT();
+		FallHeight = FallHeightStartingZ - StoredZLocation;
+	}
+}
+
+void UATHAscilaAnimInst::ResetFallHeight()
+{
+	FallHeight = 0;
+}
+
+// Determine the additive land animation's alpha
+void UATHAscilaAnimInst::FallHeightVarSetter()
+{
+	if(FallHeight <= 150)
+	{
+		LandAlpha = 0.4f;
+		bShouldLandRoll = false;
+		bShouldHardLand = false;
+	}
+	else if(FallHeight > 150 && FallHeight <= 350)
+	{
+		LandAlpha = 0.5f;
+		bShouldLandRoll = false;
+		bShouldHardLand = false;
+	}
+	else if (FallHeight > 350 && FallHeight <= 650)
+	{
+		LandAlpha = 0.65f;
+		bShouldLandRoll = false;
+		bShouldHardLand = false;	
+	}
+	else if (FallHeight > 650 && FallHeight <= 650)
+	{
+		LandAlpha = 0.8f;
+		bShouldLandRoll = false;
+		bShouldHardLand = false;
+	}
+	else
+	{
+		if(MovementSpeed > 850)
+		{
+			bShouldLandRoll = true;
+		}
+		else
+		{
+			bShouldHardLand = true;
+		}
+	}
 }

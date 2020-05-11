@@ -26,9 +26,14 @@ enum class EStanceStatus : uint8
 	Ess_StandWalking UMETA(DisplayName = "StandWalking"),
 	Ess_StandJogging UMETA(DisplayName = "StandJogging"),
 	Ess_StandSprinting UMETA(DisplayName = "StandSprinting"),
+	Ess_StandJumping UMETA(DisplayName = "StandJumping"),
 	Ess_CrouchIdling UMETA(DisplayName = "CrouchIdling"),
 	Ess_CrouchWalking UMETA(DisplayName = "CrouchWalking"),
 	Ess_CrouchSprinting UMETA(DisplayName = "CrouchSprinting"),
+	Ess_InAirJogFalling UMETA(DisplayName = "InAirJogFalling"),
+	Ess_InAirSprintFalling UMETA(DisplayName = "InAirSprintFalling"),
+	Ess_LandRolling UMETA(DisplayName = "LandRolling"),
+	Ess_LandHard UMETA(DisplayName = "LandHard"),
 	Ess_NA UMETA(DisplayName = "NA"),
 	Ess_Max UMETA(DisplayName = "DefaultMax")
 };
@@ -120,10 +125,10 @@ protected:
 		// Mesh Component
 	FVector TargetMeshLocation = FVector(0, 0, 0);
 			// Stand
-	FVector StandMeshInitialiseLocation = FVector(-9, -4.5, -99.0);
+	FVector StandMeshInitialiseLocation = FVector(-9, -4.5, -83.0);
 	FRotator StandMeshInitialiseRotation = FRotator(0, -90, 0);
 			// Crouch
-	FVector CrouchMeshInitialiseLocation = FVector(-5, -4.5, -77);
+	FVector CrouchMeshInitialiseLocation = FVector(-18.0, -4.5, -64);
 	FVector CrouchSprintMeshInitialiseLocation = FVector(-20, 0, -80);
 			// Capsule Component
 	float StandCapsuleRadius = 24.0f;
@@ -173,6 +178,8 @@ protected:
 	float CrouchWalkSpeed = 175.0f;
 	UPROPERTY(EditDefaultsOnly, Category = "Movement Properties")
 	float CrouchSprintSpeed = 600.0f;
+	UPROPERTY(EditDefaultsOnly, Category = "Movement Properties")
+	float RollSpeed = 750.0f;
 		// Idle
 	UPROPERTY(VisibleInstanceOnly, Category = "Movement Properties")
 	bool bIdleCheck = true;
@@ -185,6 +192,10 @@ protected:
 	void RequestCrouchChange();
 	void AscilaCrouch();
 	void AscilaUnCrouch();
+
+	// Landed
+	bool bNeedsToLand = false;
+	FTimerHandle LandedHandle;
 
 	#pragma endregion
 	
@@ -211,7 +222,6 @@ protected:
 	void ChangeCameraProperties();
 	FTimerHandle AimInHandle; // Camera Purposes
 		
-		
 	// Firing
 	void RequestDrawChange();
 	void DrawBow();
@@ -220,6 +230,8 @@ protected:
 	void Fire();
 	bool bIsArrowDrawn = false;
 	void DrawArrow();
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Properties|Montages")
+	UAnimMontage* UnEquipBowMontage;
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Properties|Montages")
 	UAnimMontage* DrawArrowMontage;
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Properties|Montages")
@@ -242,6 +254,16 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	// Landed
+	void SetNeedsToLandT();
+	void SetNeedsToLandF();
+	bool GetNeedsToLand();
+	virtual void Landed(const FHitResult& Hit) override;
+	bool bShouldRollLand = false;
+	void SetShouldRollLand(bool ShouldRollLand);
+	bool bShouldHardLand = false;
+	void SetShouldHardLand(bool ShouldHardLand);
+	
 	// Weapons
 	void ReDrawArrow();
 	void SetArrowDrawnVariable(bool isArrowDrawn);

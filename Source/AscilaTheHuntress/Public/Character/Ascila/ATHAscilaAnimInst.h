@@ -21,8 +21,11 @@ class ASCILATHEHUNTRESS_API UATHAscilaAnimInst : public UAnimInstance
 
 public:
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement Properties")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "States")
 	EStanceStatus StanceStatus;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "States")
+	EParentStance ParentStance;
 
 protected:
 	
@@ -34,6 +37,8 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Component")
 	AATHAscila* AscilaCharacter;
+
+	#pragma region Movement Properties
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement Properties")
 	float MovementSpeedX;
@@ -43,20 +48,54 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement Properties")
 	float MovementSpeed;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Falling Properties")
-	float VerticalVelocity;
-
+	
+	#pragma endregion
+	
+	#pragma region Aiming Properties
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Aiming Properties")
 	float Pitch;
+	void CalculatePitch(float DeltaTime);
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Aiming Properties")
 	float Yaw;
-	void CalculatePitch(float DeltaTime);
-
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Aiming Properties")
 	bool bIsAiming;
+	#pragma endregion 
+
+	#pragma region Falling Properties
 	
+	void DetermineVerticalVelocityProperties();
+
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Falling Properties")
+	float VerticalVelocity;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Falling Properties")
+	bool bNeedsToLand;
+
+	float StoredZLocation;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Falling Properties")
+	float FallHeight;
+
+	float StoredFallHeight;
+
+	float FallHeightStartingZ;
+	
+	bool bShouldResetFallHeight = false;
+	void ResetFallHeight();
+	FTimerHandle ResetFallHeightHandle;
+	void FallHeightVarSetter();
+
+	bool bShouldLandRoll = false;
+	bool bShouldHardLand = false;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Falling Properties")
+	float LandAlpha = 0.0f;
+
+	
+	#pragma endregion 
 public:
 	
 	virtual void NativeInitializeAnimation() override;

@@ -14,7 +14,7 @@
 
 // Sets default values
 AATHAscila::AATHAscila()
-{
+{	
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -53,58 +53,6 @@ void AATHAscila::BeginPlay()
 {
 	Super::BeginPlay();
 }
-
-float AATHAscila::PlayAnimMontage(UAnimMontage * AnimMontage, float InPlayRate, FName StartSectionName)
-{
-
-	UAnimInstance* AnimInstance;
-
-	if (GetMesh())
-	{
-		AnimInstance = GetMesh()->GetAnimInstance();
-	}
-	else
-	{
-		AnimInstance = nullptr;
-	}
-
-	if (AnimMontage && AnimInstance)
-	{
-		float const Duration = AnimInstance->Montage_Play(AnimMontage, InPlayRate);
-
-		// Start at a given Section if given
-		if (StartSectionName != NAME_None)
-		{
-			AnimInstance->Montage_JumpToSection(StartSectionName, AnimMontage);
-		}
-		return Duration;
-	}
-	return 0.f;
-}
-
-void AATHAscila::StopAnimMontagePlaying(UAnimMontage* AnimMontage)
-{
-
-	UAnimInstance* AnimInstance;
-
-	if (GetMesh())
-	{
-		AnimInstance = GetMesh()->GetAnimInstance();
-	}
-	else
-	{
-		AnimInstance = nullptr;
-	}
-	if (AnimMontage && AnimInstance)
-	{
-		if(AnimInstance->Montage_IsPlaying(AnimMontage))
-		{
-			AnimInstance->Montage_Stop(0.25f, AnimMontage);
-		}
-		
-	}
-}
-
 
 // Called every frame
 void AATHAscila::Tick(float DeltaTime)
@@ -172,17 +120,25 @@ void AATHAscila::MoveForward(float value)
 	// Not pressing forward
 	else
 	{
-		bIsMovingForward = false;
-		
-		// not moving forward and right
-		if (!bIsMovingForward && !bIsMovingRight)
+		if(StanceStatus != EStanceStatus::Ess_LandRolling)
 		{
-			// Is idle check animation
-			IdleCheck();
+
+			bIsMovingForward = false;
+
+			// not moving forward and right
+			if (!bIsMovingForward && !bIsMovingRight)
+			{
+				// Is idle check animation
+				IdleCheck();
+			}
+			else
+			{
+
+			}
 		}
 		else
 		{
-			
+			AddMovementInput(GetActorForwardVector()*1);
 		}
 	}
 	
@@ -297,6 +253,8 @@ void AATHAscila::SprintReleased()
 		{
 			SetStanceStatus(EStanceStatus::Ess_StandIdling);
 		}
+
+		PlayAnimMontage(UnEquipBowMontage, 1.0f, NAME_None);
 
 	}
 	else if(StanceStatus == EStanceStatus::Ess_CrouchSprinting)
@@ -475,12 +433,9 @@ void AATHAscila::CapsuleMeshPropertiesChange()
 		IsLocation = true;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Timer"));
-
 	if(IsEqualHalfeight && IsEqualRadius && IsLocation)
 	{
-		UE_LOG(LogTemp, Error, TEXT("STOP"));
-		GetWorldTimerManager().ClearTimer(CapsuleMeshProprtiesChangeTimer);
+			GetWorldTimerManager().ClearTimer(CapsuleMeshProprtiesChangeTimer);
 	}
 }
 
@@ -526,6 +481,7 @@ void AATHAscila::SetStanceStatus(EStanceStatus Status)
 		break;
 	case EStanceStatus::Ess_StandSprinting:
 		SetCharacterSpeed(SprintSpeed);
+		PlayAnimMontage(UnEquipBowMontage, -1.0f, NAME_None);
 		break;
 	case EStanceStatus::Ess_CrouchIdling:
 		SetCharacterSpeed(CrouchWalkSpeed);
@@ -535,6 +491,9 @@ void AATHAscila::SetStanceStatus(EStanceStatus Status)
 		break;
 	case EStanceStatus::Ess_CrouchSprinting:
 		SetCharacterSpeed(CrouchSprintSpeed);
+		break;
+	case EStanceStatus::Ess_LandRolling:
+		SetCharacterSpeed(RollSpeed);
 		break;
 	}
 
@@ -566,6 +525,48 @@ ERequestStance AATHAscila::GetRequestedStance()
 	#pragma endregion 
 
 	#pragma region Movement
+
+// Landed
+void AATHAscila::SetNeedsToLandT()
+{
+	bNeedsToLand = true;
+}
+void AATHAscila::SetNeedsToLandF()
+{
+	bNeedsToLand = false;
+}
+bool AATHAscila::GetNeedsToLand()
+{
+	return bNeedsToLand;
+}
+void AATHAscila::Landed(const FHitResult & Hit)
+{
+	if(bShouldRollLand)
+	{
+		SetParentStanceStatus(EParentStance::Eps_Rolling);
+		SetStanceStatus(EStanceStatus::Ess_LandRolling);
+	}
+	else if (bShouldHardLand)
+	{
+		SetParentStanceStatus(EParentStance::Eps_Rolling);
+		SetStanceStatus(EStanceStatus::Ess_LandHard);
+	}
+	else
+	{
+		SetParentStanceStatus(EParentStance::Eps_Standing);
+		SetStanceStatus(EStanceStatus::Ess_StandIdling);
+	}
+
+	GetWorldTimerManager().SetTimer(LandedHandle, this, &AATHAscila::SetNeedsToLandF, 0.25f, false);
+}
+void AATHAscila::SetShouldRollLand(bool ShouldRollLand)
+{
+	bShouldRollLand = ShouldRollLand;
+}
+void AATHAscila::SetShouldHardLand(bool ShouldHardLand)
+{
+	bShouldHardLand = ShouldHardLand;
+}
 
 void AATHAscila::SetCharacterSpeed(float Speed)
 {
@@ -604,7 +605,6 @@ void AATHAscila::IdleCheck()
 }
 
 	#pragma endregion 
-
 
 	#pragma region Weapons and Aiming
 
@@ -791,15 +791,65 @@ void AATHAscila::Fire()
 {
 	SetBowStatus(EBowStatus::Ebs_FiringShot);
 	PlayAnimMontage(FireArrowMontage, 1.0f, NAME_None);
-	
 }
 	#pragma endregion 
 
-	#pragma  region Utilities
+	#pragma  region Utilities / Animation
 
 void AATHAscila::ChangeCameraProperties()
 {
 	//bool 
+}
+
+float AATHAscila::PlayAnimMontage(UAnimMontage * AnimMontage, float InPlayRate, FName StartSectionName)
+{
+
+	UAnimInstance* AnimInstance;
+
+	if (GetMesh())
+	{
+		AnimInstance = GetMesh()->GetAnimInstance();
+	}
+	else
+	{
+		AnimInstance = nullptr;
+	}
+
+	if (AnimMontage && AnimInstance)
+	{
+		float const Duration = AnimInstance->Montage_Play(AnimMontage, InPlayRate);
+
+		// Start at a given Section if given
+		if (StartSectionName != NAME_None)
+		{
+			AnimInstance->Montage_JumpToSection(StartSectionName, AnimMontage);
+		}
+		return Duration;
+	}
+	return 0.f;
+}
+
+void AATHAscila::StopAnimMontagePlaying(UAnimMontage* AnimMontage)
+{
+
+	UAnimInstance* AnimInstance;
+
+	if (GetMesh())
+	{
+		AnimInstance = GetMesh()->GetAnimInstance();
+	}
+	else
+	{
+		AnimInstance = nullptr;
+	}
+	if (AnimMontage && AnimInstance)
+	{
+		if (AnimInstance->Montage_IsPlaying(AnimMontage))
+		{
+			AnimInstance->Montage_Stop(0.25f, AnimMontage);
+		}
+
+	}
 }
 
 	#pragma endregion
