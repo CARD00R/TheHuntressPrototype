@@ -128,31 +128,31 @@ void UATHAscilaAnimInst::ResetFallHeight()
 // Determine the additive land animation's alpha
 void UATHAscilaAnimInst::FallHeightVarSetter()
 {
-	if (FallHeight <= 150)
-	{
-		LandAlpha = 0.3f;
-		bShouldLandRoll = false;
-		bShouldHardLand = false;
-	}
-	else if (FallHeight > 150 && FallHeight <= 250)
-	{
-		LandAlpha = 0.4f;
-		bShouldLandRoll = false;
-		bShouldHardLand = false;
-	}
-	else if (FallHeight > 250 && FallHeight <= 400)
+	if (FallHeight <= 100)
 	{
 		LandAlpha = 0.5f;
 		bShouldLandRoll = false;
 		bShouldHardLand = false;
 	}
-	else if (FallHeight > 400 && FallHeight <= 650)
+	else if (FallHeight > 100 && FallHeight <= 250)
 	{
-		LandAlpha = 0.65f;
+		LandAlpha = 0.5f;
 		bShouldLandRoll = false;
 		bShouldHardLand = false;
 	}
-	else if (FallHeight > 650 && FallHeight <= 900)
+	else if (FallHeight > 250 && FallHeight <= 375)
+	{
+		LandAlpha = 0.6f;
+		bShouldLandRoll = false;
+		bShouldHardLand = false;
+	}
+	else if (FallHeight > 375 && FallHeight <= 600)
+	{
+		LandAlpha = 0.7f;
+		bShouldLandRoll = false;
+		bShouldHardLand = false;
+	}
+	else if (FallHeight > 600 && FallHeight <= 700)
 	{
 		LandAlpha = 0.8f;
 		bShouldLandRoll = false;
@@ -160,7 +160,7 @@ void UATHAscilaAnimInst::FallHeightVarSetter()
 	}
 	else
 	{
-		if (MovementSpeed > 850)
+		if (MovementSpeed > 700)
 		{
 			bShouldLandRoll = true;
 		}

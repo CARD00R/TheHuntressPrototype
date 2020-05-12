@@ -450,6 +450,7 @@ void AATHAscila::AscilaJump()
 			LaunchForce.X = 0;
 			LaunchForce.Y = 0;
 			LaunchForce.Z = 700.0f;
+			SetParentStanceStatus(EParentStance::Eps_Standing);
 			SetStanceStatus(EStanceStatus::Ess_StandIdleJumping);
 			GetWorldTimerManager().SetTimer(JumpWindowHandle, this, &AATHAscila::JumpLaunchAscila, 0.35f, false);
 		}
@@ -460,15 +461,17 @@ void AATHAscila::AscilaJump()
 			LaunchForce.X = GetActorForwardVector().X * 500.0f;
 			LaunchForce.Y = GetActorForwardVector().Y * 500.0f;
 			LaunchForce.Z = 800.0f;
+			SetParentStanceStatus(EParentStance::Eps_Standing);
 			SetStanceStatus(EStanceStatus::Ess_StandJogJumping);
 			JumpLaunchAscila();
 		}
 		// Sprinting jump
 		else
 		{
-			LaunchForce.X = GetActorForwardVector().X * 1600.0f;
-			LaunchForce.Y = GetActorForwardVector().Y * 1600.0f;
+			LaunchForce.X = GetActorForwardVector().X * 1200.0f;
+			LaunchForce.Y = GetActorForwardVector().Y * 1200.0f;
 			LaunchForce.Z = 900.0f;
+			SetParentStanceStatus(EParentStance::Eps_Standing);
 			SetStanceStatus(EStanceStatus::Ess_StandSprintJumping);
 			bShouldSprintRollLand = true;
 			JumpLaunchAscila();

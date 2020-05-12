@@ -184,7 +184,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Movement Properties")
 	float CrouchSprintSpeed = 600.0f;
 	UPROPERTY(EditDefaultsOnly, Category = "Movement Properties")
-	float RollSpeed = 750.0f;
+	float RollSpeed = 675.0f;
 		// Idle
 	UPROPERTY(VisibleInstanceOnly, Category = "Movement Properties")
 	bool bIdleCheck = true;
