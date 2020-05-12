@@ -78,6 +78,7 @@ void AATHAscila::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 	PlayerInputComponent->BindAction("Aim", IE_Released, this, &AATHAscila::RequestUnAim);
 	PlayerInputComponent->BindAction("DrawArrow", IE_Pressed, this, &AATHAscila::RequestDrawChange);
 	PlayerInputComponent->BindAction("DrawArrow", IE_Released, this, &AATHAscila::RequestFire);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AATHAscila::RequestJump);
 	
 	//PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AATHAscila::RequestDrawBow);
 }
@@ -97,8 +98,13 @@ void AATHAscila::MoveForward(float value)
 			{
 				
 			}
-			
-			else
+			else if(StanceStatus == EStanceStatus::Ess_StandIdleJumping ||
+				StanceStatus == EStanceStatus::Ess_StandJogJumping ||
+				StanceStatus == EStanceStatus::Ess_StandSprintJumping)
+			{
+				
+			}
+			else 
 			{
 				SetStanceStatus(EStanceStatus::Ess_StandJogging);
 			}
@@ -152,7 +158,17 @@ void AATHAscila::MoveRight(float value)
 
 		if (ParentStance == EParentStance::Eps_Standing)
 		{
+		if (StanceStatus == EStanceStatus::Ess_StandIdleJumping ||
+			StanceStatus == EStanceStatus::Ess_StandJogJumping ||
+			StanceStatus == EStanceStatus::Ess_StandSprintJumping)
+		{
+
+		}
+		else
+		{
 			SetStanceStatus(EStanceStatus::Ess_StandJogging);
+		}
+
 		}
 		else if (ParentStance == EParentStance::Eps_Crouching)
 		{
@@ -398,7 +414,112 @@ void AATHAscila::AscilaUnCrouch()
 	
 	SetRequestedStatus(ERequestStance::Ers_NA);
 }
+void AATHAscila::RequestJump()
+{
+	if (ParentStance != EParentStance::Eps_Dead)
+	{
+		if (ParentStance != EParentStance::Eps_InAir)
+		{
+			if(StanceStatus != EStanceStatus::Ess_StandIdleJumping && StanceStatus != EStanceStatus::Ess_StandJogJumping &&
+				StanceStatus != EStanceStatus::Ess_StandSprintJumping)
+			{
+				if (ParentStance != EParentStance::Eps_Rolling)
+				{
+					AscilaJump();
+				}
+				else
+				{
+					//SetRequestedStatus(ERequestStance::Ers_StandJumping);
+				}
+			}
+			
+		}
+		else if(ParentStance == EParentStance::Eps_InAir && JumpWindowOpen)
+		{
+			AscilaJump();
+		}
+	}
+}
+void AATHAscila::AscilaJump()
+{
+	if(ParentStance == EParentStance::Eps_Standing || ParentStance == EParentStance::Eps_Crouching)
+	{
+		// Idling Jump
+		if (StanceStatus == EStanceStatus::Ess_StandIdling || StanceStatus == EStanceStatus::Ess_CrouchIdling)
+		{
+			LaunchForce.X = 0;
+			LaunchForce.Y = 0;
+			LaunchForce.Z = 700.0f;
+			SetStanceStatus(EStanceStatus::Ess_StandIdleJumping);
+			GetWorldTimerManager().SetTimer(JumpWindowHandle, this, &AATHAscila::JumpLaunchAscila, 0.35f, false);
+		}
+		// Jogging Jump
+		else if (StanceStatus == EStanceStatus::Ess_StandJogging || StanceStatus == EStanceStatus::Ess_CrouchWalking
+			|| StanceStatus == EStanceStatus::Ess_CrouchSprinting)
+		{
+			LaunchForce.X = GetActorForwardVector().X * 500.0f;
+			LaunchForce.Y = GetActorForwardVector().Y * 500.0f;
+			LaunchForce.Z = 800.0f;
+			SetStanceStatus(EStanceStatus::Ess_StandJogJumping);
+			JumpLaunchAscila();
+		}
+		// Sprinting jump
+		else
+		{
+			LaunchForce.X = GetActorForwardVector().X * 1600.0f;
+			LaunchForce.Y = GetActorForwardVector().Y * 1600.0f;
+			LaunchForce.Z = 900.0f;
+			SetStanceStatus(EStanceStatus::Ess_StandSprintJumping);
+			bShouldSprintRollLand = true;
+			JumpLaunchAscila();
+		}
+	}
+	else
+	{
+		if(bShouldInAirJogJump)
+		{
 
+			LaunchForce.X = GetActorForwardVector().X * 500.0f;
+			LaunchForce.Y = GetActorForwardVector().Y * 500.0f;
+			LaunchForce.Z = 800.0f;
+			SetStanceStatus(EStanceStatus::Ess_StandJogJumping);
+			JumpLaunchAscila();
+		}
+		else
+		{
+			LaunchForce.X = GetActorForwardVector().X * 1600.0f;
+			LaunchForce.Y = GetActorForwardVector().Y * 1600.0f;
+			LaunchForce.Z = 900.0f;
+			SetStanceStatus(EStanceStatus::Ess_StandSprintJumping);
+			bShouldSprintRollLand = true;
+			JumpLaunchAscila();
+		}
+	}
+	
+}
+void AATHAscila::JumpLaunchAscila()
+{
+	LaunchCharacter(LaunchForce, true, true);	
+}
+void AATHAscila::SetJumpWindowT()
+{
+	JumpWindowOpen = true;
+}
+void AATHAscila::SetJumpWindowF(bool ShouldDelay)
+{
+	if(ShouldDelay)
+	{
+		GetWorldTimerManager().SetTimer(JumpWindowHandle, this, &AATHAscila::DelayedSetJumpWindowF, 0.2f, false);
+	}
+	else
+	{
+		JumpWindowOpen = false;
+	}
+}
+void AATHAscila::DelayedSetJumpWindowF()
+{
+	JumpWindowOpen = false;
+}
 void AATHAscila::CapsuleMeshPropertiesChange()
 {
 	//GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()
@@ -468,6 +589,7 @@ void AATHAscila::SetStanceStatus(EStanceStatus Status)
 		{
 			SetCharacterSpeed(JogSpeed);
 		}
+		bShouldInAirJogJump = true;
 		break;
 	case EStanceStatus::Ess_StandJogging:
 		if (bIsAiming)
@@ -478,10 +600,12 @@ void AATHAscila::SetStanceStatus(EStanceStatus Status)
 		{
 			SetCharacterSpeed(JogSpeed);
 		}
+		bShouldInAirJogJump = true;
 		break;
 	case EStanceStatus::Ess_StandSprinting:
 		SetCharacterSpeed(SprintSpeed);
 		PlayAnimMontage(UnEquipBowMontage, -1.0f, NAME_None);
+		bShouldInAirJogJump = false;
 		break;
 	case EStanceStatus::Ess_CrouchIdling:
 		SetCharacterSpeed(CrouchWalkSpeed);
@@ -541,22 +665,30 @@ bool AATHAscila::GetNeedsToLand()
 }
 void AATHAscila::Landed(const FHitResult & Hit)
 {
-	if(bShouldRollLand)
+	if(bShouldSprintRollLand)
 	{
 		SetParentStanceStatus(EParentStance::Eps_Rolling);
 		SetStanceStatus(EStanceStatus::Ess_LandRolling);
-	}
-	else if (bShouldHardLand)
-	{
-		SetParentStanceStatus(EParentStance::Eps_Rolling);
-		SetStanceStatus(EStanceStatus::Ess_LandHard);
+		bShouldSprintRollLand = false;
 	}
 	else
 	{
-		SetParentStanceStatus(EParentStance::Eps_Standing);
-		SetStanceStatus(EStanceStatus::Ess_StandIdling);
+		if (bShouldRollLand)
+		{
+			SetParentStanceStatus(EParentStance::Eps_Rolling);
+			SetStanceStatus(EStanceStatus::Ess_LandRolling);
+		}
+		else if (bShouldHardLand)
+		{
+			SetParentStanceStatus(EParentStance::Eps_Rolling);
+			SetStanceStatus(EStanceStatus::Ess_LandHard);
+		}
+		else
+		{
+			SetParentStanceStatus(EParentStance::Eps_Standing);
+			SetStanceStatus(EStanceStatus::Ess_StandIdling);
+		}
 	}
-
 	GetWorldTimerManager().SetTimer(LandedHandle, this, &AATHAscila::SetNeedsToLandF, 0.25f, false);
 }
 void AATHAscila::SetShouldRollLand(bool ShouldRollLand)
@@ -603,7 +735,10 @@ void AATHAscila::IdleCheck()
 		bIdleCheck = false;
 	}
 }
-
+bool AATHAscila::GetShouldInAirJogJump()
+{
+	return bShouldInAirJogJump;
+}
 	#pragma endregion 
 
 	#pragma region Weapons and Aiming

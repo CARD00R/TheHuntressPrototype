@@ -12,11 +12,9 @@ void UATHRollLandTransition::Notify(USkeletalMeshComponent* MeshComp, UAnimSeque
 		AATHAscila* AscilaCharacter = Cast<AATHAscila>(MeshComp->GetOwner());
 		if (AscilaCharacter != nullptr)
 		{
-			AscilaCharacter->SetParentStanceStatus(EParentStance::Eps_Standing);
 			AscilaCharacter->SetStanceStatus(EStanceStatus::Ess_StandIdling);
+			AscilaCharacter->SetParentStanceStatus(EParentStance::Eps_Standing);
 		}
-
 	}
-	
 }
 

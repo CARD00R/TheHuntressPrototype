@@ -48,7 +48,11 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement Properties")
 	float MovementSpeed;
-	
+
+	bool ShouldCloseWindow = false;
+	void CloseJumpWindow();
+	void CloseJumpWindowReset();
+
 	#pragma endregion
 	
 	#pragma region Aiming Properties
@@ -63,11 +67,10 @@ protected:
 	bool bIsAiming;
 	#pragma endregion 
 
-	#pragma region Falling Properties
+	#pragma region Falling & Landing Properties
 	
 	void DetermineVerticalVelocityProperties();
 
-	
 	UPROPERTY(BlueprintReadOnly, Category = "Falling Properties")
 	float VerticalVelocity;
 	
@@ -94,8 +97,8 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Falling Properties")
 	float LandAlpha = 0.0f;
 
-	
-	#pragma endregion 
+	#pragma endregion
+
 public:
 	
 	virtual void NativeInitializeAnimation() override;

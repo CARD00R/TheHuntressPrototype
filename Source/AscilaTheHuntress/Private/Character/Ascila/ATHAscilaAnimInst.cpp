@@ -90,14 +90,16 @@ void UATHAscilaAnimInst::DetermineVerticalVelocityProperties()
 		{
 			// On Land
 			GetWorld()->GetTimerManager().SetTimer(ResetFallHeightHandle, this, &UATHAscilaAnimInst::ResetFallHeight, 0.25f, false);
+			AscilaCharacter->SetJumpWindowT();
+			CloseJumpWindowReset();
 		}
 		else
 		{
-			AscilaCharacter->SetParentStanceStatus(EParentStance::Eps_InAir);
-			AscilaCharacter->SetStanceStatus(EStanceStatus::Ess_StandJumping);
+			AscilaCharacter->SetParentStanceStatus(EParentStance::Eps_Standing);
+			AscilaCharacter->SetJumpWindowF(false);
 		}
 
-		FallHeightStartingZ = StoredZLocation;
+		FallHeightStartingZ = StoredZLocation;	
 	}
 	// Falling
 	else
@@ -111,6 +113,7 @@ void UATHAscilaAnimInst::DetermineVerticalVelocityProperties()
 		// Adjust Capsule size maybe?
 		AscilaCharacter->SetStanceStatus(EStanceStatus::Ess_InAirJogFalling);
 		
+		CloseJumpWindow();
 		FallHeightVarSetter();
 		AscilaCharacter->SetNeedsToLandT();
 		FallHeight = FallHeightStartingZ - StoredZLocation;
@@ -125,25 +128,31 @@ void UATHAscilaAnimInst::ResetFallHeight()
 // Determine the additive land animation's alpha
 void UATHAscilaAnimInst::FallHeightVarSetter()
 {
-	if(FallHeight <= 150)
+	if (FallHeight <= 150)
+	{
+		LandAlpha = 0.3f;
+		bShouldLandRoll = false;
+		bShouldHardLand = false;
+	}
+	else if (FallHeight > 150 && FallHeight <= 250)
 	{
 		LandAlpha = 0.4f;
 		bShouldLandRoll = false;
 		bShouldHardLand = false;
 	}
-	else if(FallHeight > 150 && FallHeight <= 350)
+	else if (FallHeight > 250 && FallHeight <= 400)
 	{
 		LandAlpha = 0.5f;
 		bShouldLandRoll = false;
 		bShouldHardLand = false;
 	}
-	else if (FallHeight > 350 && FallHeight <= 650)
+	else if (FallHeight > 400 && FallHeight <= 650)
 	{
 		LandAlpha = 0.65f;
 		bShouldLandRoll = false;
-		bShouldHardLand = false;	
+		bShouldHardLand = false;
 	}
-	else if (FallHeight > 650 && FallHeight <= 650)
+	else if (FallHeight > 650 && FallHeight <= 900)
 	{
 		LandAlpha = 0.8f;
 		bShouldLandRoll = false;
@@ -151,7 +160,7 @@ void UATHAscilaAnimInst::FallHeightVarSetter()
 	}
 	else
 	{
-		if(MovementSpeed > 850)
+		if (MovementSpeed > 850)
 		{
 			bShouldLandRoll = true;
 		}
@@ -160,4 +169,19 @@ void UATHAscilaAnimInst::FallHeightVarSetter()
 			bShouldHardLand = true;
 		}
 	}
+}
+
+void UATHAscilaAnimInst::CloseJumpWindow()
+{
+	if(ShouldCloseWindow)
+	{
+		AscilaCharacter->SetJumpWindowF(true);
+		
+		ShouldCloseWindow = false;
+	}
+}
+
+void UATHAscilaAnimInst::CloseJumpWindowReset()
+{
+	ShouldCloseWindow = true;
 }

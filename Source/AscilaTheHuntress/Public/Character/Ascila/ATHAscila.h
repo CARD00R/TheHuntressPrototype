@@ -26,7 +26,9 @@ enum class EStanceStatus : uint8
 	Ess_StandWalking UMETA(DisplayName = "StandWalking"),
 	Ess_StandJogging UMETA(DisplayName = "StandJogging"),
 	Ess_StandSprinting UMETA(DisplayName = "StandSprinting"),
-	Ess_StandJumping UMETA(DisplayName = "StandJumping"),
+	Ess_StandIdleJumping UMETA(DisplayName = "StandIdleJumping"),
+	Ess_StandJogJumping UMETA(DisplayName = "StandJogJumping"),
+	Ess_StandSprintJumping UMETA(DisplayName = "StandSprintJumping"),
 	Ess_CrouchIdling UMETA(DisplayName = "CrouchIdling"),
 	Ess_CrouchWalking UMETA(DisplayName = "CrouchWalking"),
 	Ess_CrouchSprinting UMETA(DisplayName = "CrouchSprinting"),
@@ -53,6 +55,7 @@ enum class ERequestStance : uint8
 	Ers_StandWalking UMETA(DisplayName = "StandWalking"),
 	Ers_StandJogging UMETA(DisplayName = "StandJogging"),
 	Ers_StandSprinting UMETA(DisplayName = "StandSprinting"),
+	Ers_StandJumping UMETA(DisplayName = "StandJumping"),
 	Ers_CrouchIdling UMETA(DisplayName = "CrouchIdling"),
 	Ers_CrouchWalking UMETA(DisplayName = "CrouchWalking"),
 	Ers_CrouchSprinting UMETA(DisplayName = "CrouchSprinting"),
@@ -85,12 +88,14 @@ public:
 	//Parent Stances
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "States")
 	EParentStance ParentStance;
+	UFUNCTION(BlueprintCallable,Category = "States")
 	void SetParentStanceStatus(EParentStance Status);
 	EParentStance GetParentStanceStatus();
 	
 	// Stance Status
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "States")
 	EStanceStatus StanceStatus;
+	UFUNCTION(BlueprintCallable, Category = "States")
 	void SetStanceStatus(EStanceStatus Status);
 	EStanceStatus GetStanceStatus();
 
@@ -192,7 +197,17 @@ protected:
 	void RequestCrouchChange();
 	void AscilaCrouch();
 	void AscilaUnCrouch();
-
+		// Jump
+	void RequestJump();
+	void AscilaJump();
+	void JumpLaunchAscila();
+	FVector LaunchForce = FVector(0, 0, 0);
+	UPROPERTY(VisibleInstanceOnly, Category = "Movement")
+	bool JumpWindowOpen = false;
+	void DelayedSetJumpWindowF();
+	FTimerHandle JumpWindowHandle;
+	bool bShouldInAirJogJump = true;
+	
 	// Landed
 	bool bNeedsToLand = false;
 	FTimerHandle LandedHandle;
@@ -259,12 +274,19 @@ public:
 	void SetNeedsToLandF();
 	bool GetNeedsToLand();
 	virtual void Landed(const FHitResult& Hit) override;
+	UPROPERTY(VisibleInstanceOnly, Category = "Animation")
 	bool bShouldRollLand = false;
 	void SetShouldRollLand(bool ShouldRollLand);
 	bool bShouldHardLand = false;
 	void SetShouldHardLand(bool ShouldHardLand);
+	bool bShouldSprintRollLand = false;
 	
 	// Weapons
 	void ReDrawArrow();
 	void SetArrowDrawnVariable(bool isArrowDrawn);
+
+	//Jump
+	void SetJumpWindowT();
+	void SetJumpWindowF(bool ShoulDelay);
+	bool GetShouldInAirJogJump();
 };
