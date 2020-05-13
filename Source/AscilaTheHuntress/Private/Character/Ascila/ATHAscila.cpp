@@ -29,6 +29,7 @@ AATHAscila::AATHAscila()
 	//SpringArmComp->SocketOffset
 	//SpringArmComp->SetWorldLocation(SpringArmInitialiseLocation);
 	SpringArmComp->SocketOffset = SpringCompSocketDefaultOffset;
+	SpringArmComp->TargetArmLength = SpringCompDefaultArmLength;
 
 	//Camera Component
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComp"));
