@@ -11,6 +11,7 @@
 #include "TimerManager.h"
 #include "Math/UnrealMathUtility.h"
 #include "Animation/AnimInstance.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 AATHAscila::AATHAscila()
@@ -83,7 +84,7 @@ void AATHAscila::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 	//PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AATHAscila::RequestDrawBow);
 }
 
-	#pragma region  Input
+	#pragma region  General Input
 
 void AATHAscila::MoveForward(float value)
 {
@@ -253,6 +254,10 @@ void AATHAscila::Sprint()
 	else if(ParentStance == EParentStance::Eps_Crouching)
 	{
 		SetStanceStatus(EStanceStatus::Ess_CrouchSprinting);
+		TargetMeshLocation = CrouchSprintMeshInitialiseLocation;
+		TargetCapsuleRadius = CrouchSprintCapsuleRadius;
+		TargetCapsuleHalfHeight = CrouchSprintCapsuleHalfHeight;
+		GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshPropertiesChange, CapsuleMeshAlpha, true);
 		SetRequestedStatus(ERequestStance::Ers_NA);
 	}
 	
@@ -283,6 +288,11 @@ void AATHAscila::SprintReleased()
 		{
 			SetStanceStatus(EStanceStatus::Ess_CrouchIdling);
 		}
+		
+		TargetMeshLocation = CrouchMeshInitialiseLocation;
+		TargetCapsuleRadius = CrouchCapsuleRadius;
+		TargetCapsuleHalfHeight = CrouchCapsuleHalfHeight;
+		GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshPropertiesChange, CapsuleMeshAlpha, true);
 	}
 }
 void AATHAscila::RequestCrouchChange()
@@ -297,7 +307,10 @@ void AATHAscila::RequestCrouchChange()
 			{
 				if (ParentStance != EParentStance::Eps_Rolling)
 				{
-					AscilaUnCrouch();
+					if(DistanceToObjectAbove() > 169.0f)
+					{
+						AscilaUnCrouch();
+					}
 				}
 				else
 				{
@@ -347,10 +360,6 @@ void AATHAscila::AscilaCrouch()
 		if (StanceStatus == EStanceStatus::Ess_StandIdling)
 		{
 			SetStanceStatus(EStanceStatus::Ess_CrouchIdling);
-			
-			//GetMesh()->SetRelativeLocation(CrouchMeshInitialiseLocation);
-			//GetCapsuleComponent()->SetCapsuleRadius(CrouchCapsuleRadius);
-			//GetCapsuleComponent()->SetCapsuleHalfHeight(CrouchCapsuleHalfHeight);
 			TargetMeshLocation = CrouchMeshInitialiseLocation;
 			TargetCapsuleRadius = CrouchCapsuleRadius;
 			TargetCapsuleHalfHeight = CrouchCapsuleHalfHeight;
@@ -359,9 +368,6 @@ void AATHAscila::AscilaCrouch()
 		else if (StanceStatus == EStanceStatus::Ess_StandJogging)
 		{
 			SetStanceStatus(EStanceStatus::Ess_CrouchWalking);
-			//GetMesh()->SetRelativeLocation(CrouchMeshInitialiseLocation);
-			//GetCapsuleComponent()->SetCapsuleRadius(CrouchCapsuleRadius);
-			//GetCapsuleComponent()->SetCapsuleHalfHeight(CrouchCapsuleHalfHeight);
 			TargetMeshLocation = CrouchMeshInitialiseLocation;
 			TargetCapsuleRadius = CrouchCapsuleRadius;
 			TargetCapsuleHalfHeight = CrouchCapsuleHalfHeight;
@@ -370,9 +376,6 @@ void AATHAscila::AscilaCrouch()
 		else
 		{
 			SetStanceStatus(EStanceStatus::Ess_CrouchSprinting);
-			//GetMesh()->SetRelativeLocation(CrouchSprintMeshInitialiseLocation);
-			//GetCapsuleComponent()->SetCapsuleRadius(CrouchSprintCapsuleRadius);
-			//GetCapsuleComponent()->SetCapsuleHalfHeight(CrouchSprintCapsuleHalfHeight);
 			TargetMeshLocation = CrouchSprintMeshInitialiseLocation;
 			TargetCapsuleRadius = CrouchSprintCapsuleRadius;
 			TargetCapsuleHalfHeight = CrouchSprintCapsuleHalfHeight;
@@ -403,9 +406,6 @@ void AATHAscila::AscilaUnCrouch()
 		}
 		
 		SetParentStanceStatus(EParentStance::Eps_Standing);
-		//GetMesh()->SetRelativeLocation(StandMeshInitialiseLocation);
-		//GetCapsuleComponent()->SetCapsuleRadius(StandCapsuleRadius);
-		//GetCapsuleComponent()->SetCapsuleHalfHeight(StandCapsuleHalfHeight);
 		TargetMeshLocation = StandMeshInitialiseLocation;
 		TargetCapsuleRadius = StandCapsuleRadius;
 		TargetCapsuleHalfHeight = StandCapsuleHalfHeight;
@@ -474,6 +474,7 @@ void AATHAscila::AscilaJump()
 			SetParentStanceStatus(EParentStance::Eps_Standing);
 			SetStanceStatus(EStanceStatus::Ess_StandSprintJumping);
 			bShouldSprintRollLand = true;
+			bSprintJumped = true;
 			JumpLaunchAscila();
 		}
 	}
@@ -525,9 +526,6 @@ void AATHAscila::DelayedSetJumpWindowF()
 }
 void AATHAscila::CapsuleMeshPropertiesChange()
 {
-	//GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight()
-	//GetCapsuleComponent()->GetUnscaledCapsuleRadius()
-	//GetMesh()->GetRelativeLocation();
 	bool IsEqualHalfeight = false;
 	bool IsEqualRadius = false;
 	bool IsLocation = false;
@@ -563,7 +561,7 @@ void AATHAscila::CapsuleMeshPropertiesChange()
 	}
 }
 
-#pragma endregion 
+	#pragma endregion 
 
 	#pragma  region States
 
@@ -692,6 +690,7 @@ void AATHAscila::Landed(const FHitResult & Hit)
 			SetStanceStatus(EStanceStatus::Ess_StandIdling);
 		}
 	}
+	bSprintJumped = false;
 	GetWorldTimerManager().SetTimer(LandedHandle, this, &AATHAscila::SetNeedsToLandF, 0.25f, false);
 }
 void AATHAscila::SetShouldRollLand(bool ShouldRollLand)
@@ -741,6 +740,10 @@ void AATHAscila::IdleCheck()
 bool AATHAscila::GetShouldInAirJogJump()
 {
 	return bShouldInAirJogJump;
+}
+bool AATHAscila::GetSprintJumped()
+{
+	return bSprintJumped;
 }
 	#pragma endregion 
 
@@ -815,18 +818,21 @@ void AATHAscila::AimIn()
 		AimReadyAlpha = 0.001f;
 	}
 	
-	GetWorldTimerManager().SetTimer(AimingReadyHandle, this, &AATHAscila::SetAimReadyValue, AimReadyAlpha, true);
+	ChangeCameraProperties(SpringCompAimArmLength,CameraAimFOV,SpringCompSocketAimOffset);
 
-	//SpringArmComp->SocketOffset = SpringCompSocketAimOffset;
+	GetWorldTimerManager().SetTimer(AimingReadyHandle, this, &AATHAscila::SetAimReadyValue, AimReadyAlpha, true);
 }
 void AATHAscila::AimOut()
 {
 	bIsAiming = false;
+	ChangeCameraProperties(SpringCompDefaultArmLength, CameraDefaultFOV, SpringCompSocketDefaultOffset);
+	
 	SetBowStatus(EBowStatus::Ebs_NA);
 	GetWorldTimerManager().SetTimer(AimingReadyHandle, this, &AATHAscila::SetAimReadyValue, AimReadyAlpha, true);
-	//SpringArmComp->SocketOffset = SpringCompSocketDefaultOffset;
 	StopAnimMontagePlaying(DrawArrowMontage);
+	
 	SetStanceStatus(GetStanceStatus());
+
 	
 }
 void AATHAscila::SetAimReadyValue()
@@ -934,9 +940,75 @@ void AATHAscila::Fire()
 
 	#pragma  region Utilities / Animation
 
-void AATHAscila::ChangeCameraProperties()
+void AATHAscila::ChangeCameraProperties(float DistanceFromCamera, float CameraFOV, FVector CameraLocation)
 {
-	//bool 
+	TargetSpringCompSocketOffset = CameraLocation;
+	TargetSpringCompArmLength = DistanceFromCamera;
+	TargetCameraFOV = CameraFOV;
+
+	GetWorldTimerManager().SetTimer(AimInHandle, this, &AATHAscila::SmoothCameraTransition, ChangeCameraPropertiesAlpha, true);
+}
+
+void AATHAscila::SmoothCameraTransition()
+{
+	bool IsEqualArmLength = false;
+	bool IsEqualCameraFOV = false;
+	bool IsEqualSocketOffset = false;
+	
+	if (!(FMath::IsNearlyEqual(SpringArmComp->TargetArmLength, TargetSpringCompArmLength, CameraPropertiesTolerance)))
+	{
+		SpringArmComp->TargetArmLength = FMath::Lerp(SpringArmComp->TargetArmLength, TargetSpringCompArmLength, SmoothCameraAlpha);
+	}
+	else
+	{
+		IsEqualArmLength = true;
+	}
+	if (!(FMath::IsNearlyEqual(CameraComp->FieldOfView, TargetCameraFOV, CameraPropertiesTolerance)))
+	{
+		CameraComp->FieldOfView = FMath::Lerp(CameraComp->FieldOfView, TargetCameraFOV, SmoothCameraAlpha);
+	}
+	else
+	{
+		IsEqualCameraFOV = true;
+	}
+	if (FVector::Dist(SpringArmComp->SocketOffset, TargetSpringCompSocketOffset) > CameraPropertiesTolerance)
+	{
+		SpringArmComp->SocketOffset = FMath::Lerp(SpringArmComp->SocketOffset, TargetSpringCompSocketOffset, SmoothCameraAlpha);
+	}
+	else
+	{
+		IsEqualSocketOffset = true;
+	}
+	
+	if (IsEqualSocketOffset && IsEqualCameraFOV  && IsEqualArmLength)
+	{
+		GetWorldTimerManager().ClearTimer(AimInHandle);
+
+	}
+}
+
+float AATHAscila::DistanceToObjectAbove()
+{
+	FVector StartLocation = FVector(0, 0, 0);
+	FVector EndLocation = FVector(0, 0, 0);
+	FName RootName = "root";
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+	QueryParams.bTraceComplex = true;
+
+	FHitResult Hit;
+	StartLocation = GetMesh()->GetBoneLocation(RootName);
+	EndLocation.X = StartLocation.X;
+	EndLocation.Y = StartLocation.Y;
+	EndLocation.Z = StartLocation.Z * 10.0f;
+	if (GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, EndLocation, ECC_Visibility, QueryParams))
+	{
+		return Hit.Distance;
+	}
+	else
+	{
+		return 1000;
+	}
 }
 
 float AATHAscila::PlayAnimMontage(UAnimMontage * AnimMontage, float InPlayRate, FName StartSectionName)

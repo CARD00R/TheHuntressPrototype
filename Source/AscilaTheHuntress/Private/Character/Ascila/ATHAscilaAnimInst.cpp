@@ -111,7 +111,14 @@ void UATHAscilaAnimInst::DetermineVerticalVelocityProperties()
 		}
 		AscilaCharacter->SetParentStanceStatus(EParentStance::Eps_InAir);
 		// Adjust Capsule size maybe?
-		AscilaCharacter->SetStanceStatus(EStanceStatus::Ess_InAirJogFalling);
+		if(AscilaCharacter->GetSprintJumped())
+		{
+			AscilaCharacter->SetStanceStatus(EStanceStatus::Ess_InAirSprintFalling);
+		}
+		else
+		{
+			AscilaCharacter->SetStanceStatus(EStanceStatus::Ess_InAirJogFalling);
+		}
 		
 		CloseJumpWindow();
 		FallHeightVarSetter();

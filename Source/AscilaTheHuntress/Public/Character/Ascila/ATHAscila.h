@@ -130,14 +130,14 @@ protected:
 		// Mesh Component
 	FVector TargetMeshLocation = FVector(0, 0, 0);
 			// Stand
-	FVector StandMeshInitialiseLocation = FVector(-9, -4.5, -83.0);
+	FVector StandMeshInitialiseLocation = FVector(-9, -4.5, -81.0);
 	FRotator StandMeshInitialiseRotation = FRotator(0, -90, 0);
 			// Crouch
 	FVector CrouchMeshInitialiseLocation = FVector(-18.0, -4.5, -64);
-	FVector CrouchSprintMeshInitialiseLocation = FVector(-20, 0, -80);
+	FVector CrouchSprintMeshInitialiseLocation = FVector(-20, 0, -66);
 			// Capsule Component
 	float StandCapsuleRadius = 24.0f;
-	float StandCapsuleHalfHeight = 93;
+	float StandCapsuleHalfHeight = 90;
 	float CrouchCapsuleRadius = 30.0f;
 	float CrouchCapsuleHalfHeight = 70.0f;
 	float CrouchSprintCapsuleRadius = 30.0f;
@@ -149,7 +149,7 @@ protected:
 	float RadiusAlpha = 0.02f;
 	float LocationAlpha = 0.02f;
 	UPROPERTY(EditAnywhere, Category = "Components|Capsule Properties")
-	float CapsuleMeshAlpha = 0.01f;
+	float CapsuleMeshAlpha = 0.005f;
 	UPROPERTY(EditAnywhere, Category = "Components|Capsule Properties")
 	float CapsuleTolerance = 0.5f;
 
@@ -197,6 +197,7 @@ protected:
 	void RequestCrouchChange();
 	void AscilaCrouch();
 	void AscilaUnCrouch();
+	float DistanceToObjectAbove();
 		// Jump
 	void RequestJump();
 	void AscilaJump();
@@ -207,7 +208,7 @@ protected:
 	void DelayedSetJumpWindowF();
 	FTimerHandle JumpWindowHandle;
 	bool bShouldInAirJogJump = true;
-	
+	bool bSprintJumped = false;
 	// Landed
 	bool bNeedsToLand = false;
 	FTimerHandle LandedHandle;
@@ -234,7 +235,10 @@ protected:
 	float AimReadyAlpha = 0.001f;
 	float CurrentAimReady = 0.0f;
 	FTimerHandle AimingReadyHandle; // When animation blending is finished then you are aim 'ready'
-	void ChangeCameraProperties();
+	UPROPERTY(EditInstanceOnly, Category = "Weapon Properties")
+	float ChangeCameraPropertiesAlpha = 0.01f;
+	UPROPERTY(EditInstanceOnly, Category = "Weapon Properties")
+	float SmoothCameraAlpha = 0.03f;
 	FTimerHandle AimInHandle; // Camera Purposes
 		
 	// Firing
@@ -254,10 +258,25 @@ protected:
 	#pragma endregion
 	
 	// Camera
-	void ChangeCameraSettings();
-	FVector SpringCompSocketAimOffset = FVector(0, 130.0, 80.0);
-	FVector SpringCompSocketDefaultOffset = FVector(0, 130.0, 80.0);
+	void ChangeCameraProperties(float DistanceFromCamera, float CameraFOV, FVector CameraLocation);
+	void SmoothCameraTransition();
+	float CameraPropertiesTolerance = 0.5f;
+	
+		// Default
+	float SpringCompDefaultArmLength = 400.0f;
+	float CameraDefaultFOV = 90.0f;
+	FVector SpringCompSocketDefaultOffset = FVector(0, 55.0, 80.0);
 
+		// Aiming
+	float SpringCompAimArmLength = 400.0f;
+	float CameraAimFOV = 90.0f;
+	FVector SpringCompSocketAimOffset = FVector(260.0f, 100.0f, 80.0f);
+ 
+		// Target
+	float TargetSpringCompArmLength = 400.0f;
+	float TargetCameraFOV = 90.0f;
+	FVector TargetSpringCompSocketOffset = FVector(0, 55.0, 80.0);
+	
 	// Animation
 	float PlayAnimMontage(UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName);
 	void StopAnimMontagePlaying(UAnimMontage* AnimMontage);
@@ -289,4 +308,5 @@ public:
 	void SetJumpWindowT();
 	void SetJumpWindowF(bool ShoulDelay);
 	bool GetShouldInAirJogJump();
+	bool GetSprintJumped();
 };
