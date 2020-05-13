@@ -8,6 +8,7 @@
 
 class USpringArmComponent;
 class UCameraComponent;
+class AATHAscilaPC;
 
 UENUM(BlueprintType)
 enum class EParentStance : uint8
@@ -81,7 +82,8 @@ public:
 		UCameraComponent* CameraComp;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		UCharacterMovementComponent* CharMovementComp;
-
+	// Player Controller
+	AATHAscilaPC* AscilaPC; 
 	#pragma endregion
 	
 	#pragma region States
@@ -280,6 +282,7 @@ protected:
 	// Animation
 	float PlayAnimMontage(UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName);
 	void StopAnimMontagePlaying(UAnimMontage* AnimMontage);
+	bool bIsRMRotating = false;
 	
 public:
 	// Called every frame
@@ -309,4 +312,8 @@ public:
 	void SetJumpWindowF(bool ShoulDelay);
 	bool GetShouldInAirJogJump();
 	bool GetSprintJumped();
+
+	// Animation
+	UFUNCTION(BlueprintCallable, Category= "Animation|Internal")
+	void SetPCRootMotionRotation(bool NeedsRootMotionRotation);
 };

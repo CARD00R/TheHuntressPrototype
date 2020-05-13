@@ -13,7 +13,12 @@ void UATHHardLandInputDisable::NotifyBegin(USkeletalMeshComponent * MeshComp, UA
 		AATHAscila* AscilaCharacter = Cast<AATHAscila>(MeshComp->GetOwner());
 		if (AscilaCharacter != nullptr)
 		{
-			AscilaCharacter->GetController()->GetPawn()->DisableInput(UGameplayStatics::GetPlayerController(this, 0));
+			APlayerController* AscilaPC = MeshComp->GetWorld()->GetFirstPlayerController();
+
+			if(AscilaPC!=nullptr)
+			{
+				AscilaCharacter->GetController()->GetPawn()->DisableInput(AscilaPC);
+			}
 		}
 	}
 }
@@ -25,7 +30,12 @@ void UATHHardLandInputDisable::NotifyEnd(USkeletalMeshComponent * MeshComp, UAni
 		AATHAscila* AscilaCharacter = Cast<AATHAscila>(MeshComp->GetOwner());
 		if (AscilaCharacter != nullptr)
 		{
-			AscilaCharacter->GetController()->GetPawn()->EnableInput(UGameplayStatics::GetPlayerController(this, 0));
+			APlayerController* AscilaPC = MeshComp->GetWorld()->GetFirstPlayerController();
+
+			if (AscilaPC != nullptr)
+			{
+				AscilaCharacter->GetController()->GetPawn()->EnableInput(AscilaPC);
+			}
 			AscilaCharacter->SetParentStanceStatus(EParentStance::Eps_Standing);
 			AscilaCharacter->SetStanceStatus(EStanceStatus::Ess_StandIdling);
 		}

@@ -12,6 +12,7 @@
 #include "Math/UnrealMathUtility.h"
 #include "Animation/AnimInstance.h"
 #include "DrawDebugHelpers.h"
+#include "Character/Ascila/ATHAscilaPC.h"
 
 // Sets default values
 AATHAscila::AATHAscila()
@@ -744,6 +745,18 @@ bool AATHAscila::GetShouldInAirJogJump()
 bool AATHAscila::GetSprintJumped()
 {
 	return bSprintJumped;
+}
+void AATHAscila::SetPCRootMotionRotation(bool NeedsRootMotionRotation)
+{
+	AscilaPC = Cast<AATHAscilaPC>(GetWorld()->GetFirstPlayerController());
+	if (AscilaPC != nullptr)
+	{
+		AscilaPC->SetIsRootMotionRotating(NeedsRootMotionRotation);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("No PC found"));
+	}
 }
 	#pragma endregion 
 
