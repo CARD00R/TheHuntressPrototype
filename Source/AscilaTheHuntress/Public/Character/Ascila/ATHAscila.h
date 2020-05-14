@@ -228,6 +228,10 @@ protected:
 	UPROPERTY(EditInstanceOnly, Category = "Weapon Properties")
 	float MinPitch = -70.0f;
 	float Yaw;
+	UPROPERTY(EditInstanceOnly, Category = "Weapon Properties")
+	bool bLerpYaw = false;
+	UFUNCTION(BlueprintCallable, Category = "Animation|Internal")
+	void SetControllerRotationYawInput(bool SetYawTo);
 	void RequestAim();
 	void RequestUnAim();
 	void AimIn();
@@ -260,7 +264,8 @@ protected:
 	#pragma endregion
 	
 	// Camera
-	void ChangeCameraProperties(float DistanceFromCamera, float CameraFOV, FVector CameraLocation);
+	UFUNCTION(BlueprintCallable)
+	void ChangeCameraProperties(float DistanceFromCamera, float CameraFOV, FVector CameraLocation, float TransitionSpeed);
 	void SmoothCameraTransition();
 	float CameraPropertiesTolerance = 0.5f;
 	
@@ -290,7 +295,9 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
+	//Overried FaceRotation For Yaw Lerp
+	virtual void FaceRotation(FRotator NewControlRotation, float DeltaTime) override;
+	
 	// Landed
 	void SetNeedsToLandT();
 	void SetNeedsToLandF();
@@ -316,4 +323,5 @@ public:
 	// Animation
 	UFUNCTION(BlueprintCallable, Category= "Animation|Internal")
 	void SetPCRootMotionRotation(bool NeedsRootMotionRotation);
+
 };

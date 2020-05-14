@@ -48,7 +48,7 @@ AATHAscila::AATHAscila()
 	CharMovementComp->MaxWalkSpeed = JogSpeed;
 
 	CharMovementComp->bUseControllerDesiredRotation = false;
-	bUseControllerRotationYaw = true;
+	bUseControllerRotationYaw = !bLerpYaw;
 }
 
 // Called when the game starts or when spawned
@@ -712,14 +712,14 @@ void AATHAscila::ChangeRotationRate()
 {
 	if(StanceStatus == EStanceStatus::Ess_StandSprinting)
 	{
-		bUseControllerRotationYaw = false;
+		//bUseControllerRotationYaw = false;
 		CharMovementComp->bUseControllerDesiredRotation = true;
-		CharMovementComp->RotationRate = SprintingRotationRate;
+		//CharMovementComp->RotationRate = SprintingRotationRate;
 	}
 	else
 	{
-		bUseControllerRotationYaw = true;
-		CharMovementComp->bUseControllerDesiredRotation = false;
+		//bUseControllerRotationYaw = true;
+		//CharMovementComp->bUseControllerDesiredRotation = false;
 	}
 }
 void AATHAscila::IdleCheck()
@@ -832,14 +832,14 @@ void AATHAscila::AimIn()
 		AimReadyAlpha = 0.001f;
 	}
 	
-	ChangeCameraProperties(SpringCompAimArmLength,CameraAimFOV,SpringCompSocketAimOffset);
+	ChangeCameraProperties(SpringCompAimArmLength,CameraAimFOV,SpringCompSocketAimOffset, ChangeCameraPropertiesAlpha);
 
 	GetWorldTimerManager().SetTimer(AimingReadyHandle, this, &AATHAscila::SetAimReadyValue, AimReadyAlpha, true);
 }
 void AATHAscila::AimOut()
 {
 	bIsAiming = false;
-	ChangeCameraProperties(SpringCompDefaultArmLength, CameraDefaultFOV, SpringCompSocketDefaultOffset);
+	ChangeCameraProperties(SpringCompDefaultArmLength, CameraDefaultFOV, SpringCompSocketDefaultOffset, ChangeCameraPropertiesAlpha);
 	
 	SetBowStatus(EBowStatus::Ebs_NA);
 	GetWorldTimerManager().SetTimer(AimingReadyHandle, this, &AATHAscila::SetAimReadyValue, AimReadyAlpha, true);
@@ -954,13 +954,13 @@ void AATHAscila::Fire()
 
 	#pragma  region Utilities / Animation
 
-void AATHAscila::ChangeCameraProperties(float DistanceFromCamera, float CameraFOV, FVector CameraLocation)
+void AATHAscila::ChangeCameraProperties(float DistanceFromCamera, float CameraFOV, FVector CameraLocation, float TransitionSpeed)
 {
 	TargetSpringCompSocketOffset = CameraLocation;
 	TargetSpringCompArmLength = DistanceFromCamera;
 	TargetCameraFOV = CameraFOV;
 
-	GetWorldTimerManager().SetTimer(AimInHandle, this, &AATHAscila::SmoothCameraTransition, ChangeCameraPropertiesAlpha, true);
+	GetWorldTimerManager().SetTimer(AimInHandle, this, &AATHAscila::SmoothCameraTransition, TransitionSpeed, true);
 }
 
 void AATHAscila::SmoothCameraTransition()
@@ -999,6 +999,17 @@ void AATHAscila::SmoothCameraTransition()
 		GetWorldTimerManager().ClearTimer(AimInHandle);
 
 	}
+}
+
+void AATHAscila::FaceRotation(FRotator NewControlRotation, float DeltaTime)
+{
+	Super::FaceRotation(NewControlRotation, DeltaTime);
+}
+
+void AATHAscila::SetControllerRotationYawInput(bool SetYawTo)
+{
+	bLerpYaw = SetYawTo;
+	bUseControllerRotationYaw = bLerpYaw;
 }
 
 float AATHAscila::DistanceToObjectAbove()
