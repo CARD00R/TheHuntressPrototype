@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Character/Ascila/ATHAscilaAnimInst.h"
+#include "Character/Ascila/AtHAscilaAnimInst.h"
 #include "Character/Ascila/ATHAscila.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "TimerManager.h"
@@ -43,11 +43,13 @@ void UATHAscilaAnimInst::UpdateAnimationProperties(float DeltaTime)
 			//Sets AnimInst StanceStatus to the Character's
 			StanceStatus = AscilaCharacter->GetStanceStatus();
 			ParentStance = AscilaCharacter->GetParentStanceStatus();
+			ParkourStatus = AscilaCharacter->GetParkourStatus();
 			bIsAiming = AscilaCharacter->GetIsAiming();
 			bNeedsToLand = AscilaCharacter->GetNeedsToLand();
+			bCanGrab = AscilaCharacter->GetCanGrab();
 			AscilaCharacter->SetShouldRollLand(bShouldLandRoll);
 			AscilaCharacter->SetShouldHardLand(bShouldHardLand);
-			
+
 			//Calculations
 			CalculatePitch(DeltaTime);
 			DetermineVerticalVelocityProperties();
@@ -81,50 +83,55 @@ void UATHAscilaAnimInst::CalculatePitch(float DeltaTime)
 
 void UATHAscilaAnimInst::DetermineVerticalVelocityProperties()
 {
-	StoredZLocation = AscilaCharacter->GetActorLocation().Z;
 
-	// Jumping or OnLand
-	if(VerticalVelocity >= 0)
+	if(ParentStance != EParentStance::Eps_Parkouring)
 	{
-		if(VerticalVelocity == 0)
-		{
-			// On Land
-			GetWorld()->GetTimerManager().SetTimer(ResetFallHeightHandle, this, &UATHAscilaAnimInst::ResetFallHeight, 0.25f, false);
-			AscilaCharacter->SetJumpWindowT();
-			CloseJumpWindowReset();
-		}
-		else
-		{
-			AscilaCharacter->SetParentStanceStatus(EParentStance::Eps_Standing);
-			AscilaCharacter->SetJumpWindowF(false);
-		}
-
-		FallHeightStartingZ = StoredZLocation;	
-	}
-	// Falling
-	else
-	{
-		if(GetWorld()->GetTimerManager().IsTimerActive(ResetFallHeightHandle))
-		{
-			GetWorld()->GetTimerManager().ClearTimer(ResetFallHeightHandle);
-			ResetFallHeight();
-		}
-		AscilaCharacter->SetParentStanceStatus(EParentStance::Eps_InAir);
-		// Adjust Capsule size maybe?
-		if(AscilaCharacter->GetSprintJumped())
-		{
-			AscilaCharacter->SetStanceStatus(EStanceStatus::Ess_InAirSprintFalling);
-		}
-		else
-		{
-			AscilaCharacter->SetStanceStatus(EStanceStatus::Ess_InAirJogFalling);
-		}
+		StoredZLocation = AscilaCharacter->GetActorLocation().Z;
 		
-		CloseJumpWindow();
-		FallHeightVarSetter();
-		AscilaCharacter->SetNeedsToLandT();
-		FallHeight = FallHeightStartingZ - StoredZLocation;
+		// Jumping or OnLand
+		if (VerticalVelocity >= 0)
+		{
+			if (VerticalVelocity == 0)
+			{
+				// On Land
+				GetWorld()->GetTimerManager().SetTimer(ResetFallHeightHandle, this, &UATHAscilaAnimInst::ResetFallHeight, 0.25f, false);
+				AscilaCharacter->SetJumpWindowT();
+				CloseJumpWindowReset();
+			}
+			else
+			{
+				AscilaCharacter->SetParentStanceStatus(EParentStance::Eps_Standing);
+				AscilaCharacter->SetJumpWindowF(false);
+			}
+
+			FallHeightStartingZ = StoredZLocation;
+		}
+		// Falling
+		else
+		{
+			if (GetWorld()->GetTimerManager().IsTimerActive(ResetFallHeightHandle))
+			{
+				GetWorld()->GetTimerManager().ClearTimer(ResetFallHeightHandle);
+				ResetFallHeight();
+			}
+			AscilaCharacter->SetParentStanceStatus(EParentStance::Eps_InAir);
+			// Adjust Capsule size maybe?
+			if (AscilaCharacter->GetSprintJumped())
+			{
+				AscilaCharacter->SetStanceStatus(EStanceStatus::Ess_InAirSprintFalling);
+			}
+			else
+			{
+				AscilaCharacter->SetStanceStatus(EStanceStatus::Ess_InAirJogFalling);
+			}
+
+			CloseJumpWindow();
+			FallHeightVarSetter();
+			AscilaCharacter->SetNeedsToLandT();
+			FallHeight = FallHeightStartingZ - StoredZLocation;
+		}
 	}
+	
 }
 
 void UATHAscilaAnimInst::ResetFallHeight()

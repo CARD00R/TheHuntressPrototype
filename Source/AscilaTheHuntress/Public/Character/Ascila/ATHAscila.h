@@ -17,6 +17,7 @@ enum class EParentStance : uint8
 	Eps_Crouching UMETA(DisplayName = "Crouching"),
 	Eps_Rolling UMETA(DisplayName = "Rolling"),
 	Eps_InAir UMETA(DisplayName = "InAir"),
+	Eps_Parkouring UMETA(DisplayName = "Parkouring"),
 	Eps_Dead UMETA(DisplayName = "Dead"),
 	Eps_Max UMETA(DisplayName = "DefaultMax")
 };
@@ -39,6 +40,18 @@ enum class EStanceStatus : uint8
 	Ess_LandHard UMETA(DisplayName = "LandHard"),
 	Ess_NA UMETA(DisplayName = "NA"),
 	Ess_Max UMETA(DisplayName = "DefaultMax")
+};
+
+UENUM(BlueprintType)
+enum class EParkourStatus : uint8
+{
+	Eps_NA UMETA(DisplayName = "NA"),
+	Eps_BracedIdling UMETA(DisplayName = "BracedIdling"),
+	Eps_BracedMoving UMETA(DisplayName = "BracedMoving"),
+	Eps_BracedRightJumping UMETA(DisplayName = "BracedRightJumping"),
+	Eps_BracedLeftJumping UMETA(DisplayName = "BracedLeftJumping"),
+	Eps_BracedClimbingOver UMETA(DisplayName = "BracedClimbingOver"),
+	Eps_Max UMETA(DisplayName = "DefaultMax")
 };
 UENUM(BlueprintType)
 enum class EBowStatus : uint8
@@ -80,8 +93,6 @@ public:
 		USpringArmComponent* SpringArmComp;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components|Camera")
 		UCameraComponent* CameraComp;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-		UCharacterMovementComponent* CharMovementComp;
 	// Player Controller
 	AATHAscilaPC* AscilaPC; 
 	#pragma endregion
@@ -101,7 +112,14 @@ public:
 	void SetStanceStatus(EStanceStatus Status);
 	EStanceStatus GetStanceStatus();
 
-	// Stance Status
+	// Parkour Status
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "States")
+		EParkourStatus ParkourStatus;
+	UFUNCTION(BlueprintCallable, Category = "States")
+		void SetParkourStatus(EParkourStatus Status);
+	EParkourStatus GetParkourStatus();
+	
+	// Bow Status
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "States")
 		EBowStatus BowStatus;
 	void SetBowStatus(EBowStatus Status);
@@ -160,7 +178,10 @@ protected:
 	#pragma endregion 
 
 	// Input
-	bool bIsMovingForward = false;
+	bool bIsMovingForwardBackward = false;
+	UPROPERTY(VisibleInstanceOnly, Category = "Movement")
+	bool bIsMovingforward = false;
+	bool bIsMovingRightLeft = false;
 	bool bIsMovingRight = false;
 	void MoveForward(float value);
 	void MoveRight(float value);
@@ -263,7 +284,7 @@ protected:
 	UAnimMontage* FireArrowMontage;
 	#pragma endregion
 	
-	// Camera
+	#pragma region Camera
 	UFUNCTION(BlueprintCallable)
 	void ChangeCameraProperties(float DistanceFromCamera, float CameraFOV, FVector CameraLocation, float TransitionSpeed);
 	void SmoothCameraTransition();
@@ -283,11 +304,40 @@ protected:
 	float TargetSpringCompArmLength = 400.0f;
 	float TargetCameraFOV = 90.0f;
 	FVector TargetSpringCompSocketOffset = FVector(0, 55.0, 80.0);
+
+	#pragma endregion
 	
 	// Animation
 	float PlayAnimMontage(UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName);
 	void StopAnimMontagePlaying(UAnimMontage* AnimMontage);
 	bool bIsRMRotating = false;
+
+	#pragma region Parkour
+	// States
+	bool bCanGrab = false;
+	bool bIsClimbing = false;
+	bool bIsBraced = false;
+	FName PelvisSocketName = "Pelvis_Socket";
+	//Traces
+		// Forward
+	UFUNCTION(BlueprintCallable)
+		void LedgeTraceForward();
+	UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
+	FVector WallTraceLocation;
+	UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
+	FVector WallNormal;
+		// Height
+	UFUNCTION(BlueprintCallable)
+		void LedgeTraceHeight();
+	UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
+	FVector WallHeightLocation;
+	// Parkour Movement
+		// Braced
+	void GrabLedge();
+	void ExitBrace();
+	void ClimbLedge();
+	
+	#pragma endregion 
 	
 public:
 	// Called every frame
@@ -309,6 +359,7 @@ public:
 	bool bShouldHardLand = false;
 	void SetShouldHardLand(bool ShouldHardLand);
 	bool bShouldSprintRollLand = false;
+
 	
 	// Weapons
 	void ReDrawArrow();
@@ -323,5 +374,9 @@ public:
 	// Animation
 	UFUNCTION(BlueprintCallable, Category= "Animation|Internal")
 	void SetPCRootMotionRotation(bool NeedsRootMotionRotation);
+
+	// Parkour
+	bool GetCanGrab();
+
 
 };

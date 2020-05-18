@@ -4,3 +4,5 @@
 
 #include "CoreMinimal.h"
 
+// Collision/Trace Channels
+#define COLLISION_LEDGE					TraceTypeQuery1

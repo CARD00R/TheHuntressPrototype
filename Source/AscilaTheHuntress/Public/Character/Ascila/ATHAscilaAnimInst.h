@@ -26,6 +26,9 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "States")
 	EParentStance ParentStance;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "States")
+	EParkourStatus ParkourStatus;
 
 protected:
 	
@@ -98,6 +101,13 @@ protected:
 	float LandAlpha = 0.0f;
 
 	#pragma endregion
+
+
+	#pragma region Parkour
+
+	bool bCanGrab = false;
+
+	#pragma endregion  
 
 public:
 	
