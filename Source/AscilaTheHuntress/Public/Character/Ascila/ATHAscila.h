@@ -282,6 +282,10 @@ protected:
 	UAnimMontage* DrawArrowMontage;
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Properties|Montages")
 	UAnimMontage* FireArrowMontage;
+
+	void SpawnArrow();
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Properties|Arrow")
+	TSubclassOf<AActor> ArrowClass;
 	#pragma endregion
 	
 	#pragma region Camera
@@ -335,9 +339,19 @@ protected:
 		// Braced
 	void GrabLedge();
 	void ExitBrace();
-	void ClimbLedge();
+	void BracedClimbLedge();
 	
-	#pragma endregion 
+	#pragma endregion
+
+	#pragma region Move To
+	void CallSetMoveToParameters(FVector TargetLocation, FRotator TargetRotation, float Speed);
+	FVector TargetMoveToLocation = FVector(0, 0, 0);
+	FRotator TargetMoveToRotation = FRotator(0, 0, 0);
+	
+	FTimerHandle MoveToHandle;
+	
+	void MoveTo();
+	#pragma endregion
 	
 public:
 	// Called every frame
@@ -376,6 +390,10 @@ public:
 	void SetPCRootMotionRotation(bool NeedsRootMotionRotation);
 
 	// Parkour
+	UFUNCTION(BlueprintCallable, Category = "Parkour")
+	void EnterRMState();
+	UFUNCTION(BlueprintCallable, Category = "Parkour")
+	void ExitRMState();
 	bool GetCanGrab();
 
 
