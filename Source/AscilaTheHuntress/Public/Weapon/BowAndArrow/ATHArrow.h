@@ -39,9 +39,14 @@ protected:
 	void ArrowRotation();
 	FTimerHandle ArrowRotationHandle;
 
+	// Damage
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	float BaseDamage = 20.0f;
 	
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	void SetPowerVelocity(float PowerVel);
+
+	float GetDamage();
 };

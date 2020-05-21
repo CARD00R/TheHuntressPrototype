@@ -16,7 +16,8 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
-#include "Weapon/BowAndArrow/ATHArrow.h"
+#include "Weapon/BowAndArrow/ATHBow.h"
+
 
 // Sets default values
 AATHAscila::AATHAscila()
@@ -57,7 +58,7 @@ AATHAscila::AATHAscila()
 void AATHAscila::BeginPlay()
 {
 	Super::BeginPlay();
-	PelvisSocketName = "Pelvis_Socket";
+	SpawnBow();
 }
 
 // Called every frame
@@ -991,23 +992,28 @@ void AATHAscila::Fire()
 {
 	SetBowStatus(EBowStatus::Ebs_FiringShot);
 	PlayAnimMontage(FireArrowMontage, 1.0f, NAME_None);
-	SpawnArrow();
-}
-void AATHAscila::SpawnArrow()
-{
-	AATHArrow* DeferredArrow = Cast<AATHArrow>(UGameplayStatics::BeginDeferredActorSpawnFromClass(GetWorld(), ArrowClass, GetActorTransform(), 
-		ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn, this));
-	if(DeferredArrow != nullptr)
+	EquippedBow = Cast<AATHBow>(EquippedBow);
+	if(EquippedBow != nullptr)
 	{
-		DeferredArrow->SetPowerVelocity(1000.0f);
-		UGameplayStatics::FinishSpawningActor(DeferredArrow, GetActorTransform());
-		UE_LOG(LogTemp, Error, TEXT("Spawned Arrow"));
+		EquippedBow->FireArrow();
+		UE_LOG(LogTemp, Error, TEXT("Successful Cast"));
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("Missing Arrow"));
+		UE_LOG(LogTemp, Error, TEXT("Failed Cast"));
 	}
+}
+void AATHAscila::SpawnBow()
+{
 
+	UWorld* world = GetWorld();
+	FActorSpawnParameters spawnParams;
+	spawnParams.Owner = this;
+	FRotator rotator;
+	FVector spawnLocation = this->GetActorLocation();
+
+	EquippedBow = world->SpawnActor<AATHBow>(BowClass, spawnLocation, rotator, spawnParams);
+	EquippedBow->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, BowSocketName);
 }
 
 	#pragma endregion 
@@ -1084,10 +1090,11 @@ float AATHAscila::DistanceToObjectAbove()
 	QueryParams.bTraceComplex = true;
 
 	FHitResult Hit;
-	StartLocation = GetMesh()->GetBoneLocation(RootName);
+	StartLocation = FVector(GetMesh()->GetBoneLocation(RootName).X, GetMesh()->GetBoneLocation(RootName).Y,
+		GetMesh()->GetBoneLocation(RootName).Z);
 	EndLocation.X = StartLocation.X;
 	EndLocation.Y = StartLocation.Y;
-	EndLocation.Z = StartLocation.Z * 10.0f;
+	EndLocation.Z = StartLocation.Z + 200.0f;
 	if (GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, EndLocation, ECC_Visibility, QueryParams))
 	{
 		return Hit.Distance;

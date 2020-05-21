@@ -9,6 +9,7 @@
 class USpringArmComponent;
 class UCameraComponent;
 class AATHAscilaPC;
+class AATHBow;
 
 UENUM(BlueprintType)
 enum class EParentStance : uint8
@@ -283,9 +284,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Properties|Montages")
 	UAnimMontage* FireArrowMontage;
 
-	void SpawnArrow();
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon Properties|Arrow")
-	TSubclassOf<AActor> ArrowClass;
+	// Bow
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Properties|Bow")
+		TSubclassOf<AATHBow> BowClass;
+	AATHBow* EquippedBow;
+	void SpawnBow();
+	FName BowSocketName = "Bow_Socket";
 	#pragma endregion
 	
 	#pragma region Camera
@@ -359,7 +363,7 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	//Overried FaceRotation For Yaw Lerp
+	//Override FaceRotation For Yaw Lerp
 	virtual void FaceRotation(FRotator NewControlRotation, float DeltaTime) override;
 	
 	// Landed
@@ -374,7 +378,6 @@ public:
 	void SetShouldHardLand(bool ShouldHardLand);
 	bool bShouldSprintRollLand = false;
 
-	
 	// Weapons
 	void ReDrawArrow();
 	void SetArrowDrawnVariable(bool isArrowDrawn);

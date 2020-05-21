@@ -55,3 +55,8 @@ void AATHArrow::SetPowerVelocity(float PowerVel)
 {
 	ProjectileMovementComp->InitialSpeed = PowerVel;
 }
+
+float AATHArrow::GetDamage()
+{
+	return BaseDamage;
+}
