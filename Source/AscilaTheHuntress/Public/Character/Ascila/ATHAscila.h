@@ -287,7 +287,7 @@ protected:
 	// Bow
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Properties|Bow")
 		TSubclassOf<AATHBow> BowClass;
-	AATHBow* EquippedBow;
+
 	void SpawnBow();
 	FName BowSocketName = "Bow_Socket";
 	#pragma endregion
@@ -381,7 +381,10 @@ public:
 	// Weapons
 	void ReDrawArrow();
 	void SetArrowDrawnVariable(bool isArrowDrawn);
-
+	float GetPitch();
+	APlayerCameraManager* GetCameraManager();
+	AATHBow* EquippedBow;
+	
 	//Jump
 	void SetJumpWindowT();
 	void SetJumpWindowF(bool ShoulDelay);

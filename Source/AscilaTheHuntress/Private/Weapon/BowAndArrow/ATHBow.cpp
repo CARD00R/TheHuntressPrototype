@@ -2,13 +2,13 @@
 
 
 #include "Weapon/BowAndArrow/ATHBow.h"
-//#include "Components/BoxComponent.h"
-#include "AscilaTheHuntress/AscilaTheHuntress.h"
+#include "Character/Ascila/ATHAscila.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "Weapon/BowAndArrow/ATHArrow.h"
 #include "Kismet/GameplayStatics.h"
-#include "Kismet/KismetMathLibrary.h"
 #include "Engine.h"
+#include "AscilaTheHuntress/AscilaTheHuntress.h"
+#include "Kismet/KismetMathLibrary.h"
 // Sets default values
 AATHBow::AATHBow()
 {
@@ -44,60 +44,52 @@ void AATHBow::Tick(float DeltaTime)
 void AATHBow::FireArrow()
 {
 	AActor* MyOwner = GetOwner();
-	if (MyOwner) {
-
-		// Gets the location and rotation of the pawn's eyes
-		FVector EyeLocation;
-		FRotator EyeRotation;
-		GetActorEyesViewPoint(EyeLocation, EyeRotation);
-
-		FVector ShotDirection = EyeRotation.Vector();
-		// Bullet Spread
-		float BulletSpread = 0.0f;
-		float HalfRad = FMath::DegreesToRadians(BulletSpread);
-		ShotDirection = FMath::VRandCone(ShotDirection, HalfRad, HalfRad);
-
-		FVector TraceEnd = EyeLocation + (ShotDirection * 10000);
-
+	AATHAscila* AscilaOwner = Cast<AATHAscila>(MyOwner);
+	
+	if (AscilaOwner) {
+		// Spawn Params
 		FCollisionQueryParams QueryParams;
 		QueryParams.AddIgnoredActor(MyOwner);
 		QueryParams.AddIgnoredActor(this);
 		QueryParams.bTraceComplex = true;
 		QueryParams.bReturnPhysicalMaterial = true;
-
-		FVector TracerEndPoint = TraceEnd;
-		ArrowTransform;
 		FHitResult Hit;
-		if (GetWorld()->LineTraceSingleByChannel(Hit, EyeLocation, TraceEnd, COLLISION_BOW, QueryParams))
+		
+		// Gets the location and rotation of the pawn's eyes
+		FVector EyeLocation;
+		FRotator EyeRotation;
+		GetActorEyesViewPoint(EyeLocation, EyeRotation);
+		EyeRotation.Pitch = AscilaOwner->GetPitch();
+		FVector ShotDirection = EyeRotation.Vector();
+		
+		// Bullet Spread
+		float BulletSpread = 0.0f;
+		float HalfRad = FMath::DegreesToRadians(BulletSpread);
+		ShotDirection = FMath::VRandCone(ShotDirection, HalfRad, HalfRad);
+
+		// Spawn Arrow Transform
+		ArrowTransform.SetScale3D(BowSize);
+		ArrowTransform.SetLocation(EyeLocation);	
+		// To convert FRotator to quart we normalize it then quaternion it
+		ArrowTransform.SetRotation(EyeRotation.GetNormalized().Quaternion());
+
+		
+		FVector CamLocation = AscilaOwner->GetCameraManager()->GetCameraLocation();
+		FVector CamForward = AscilaOwner->GetCameraManager()->GetCameraRotation().Vector();
+		FVector TraceEnd = CamLocation + (CamForward * 70000);
+		
+		if (GetWorld()->LineTraceSingleByChannel(Hit, CamLocation, TraceEnd, COLLISION_BOW, QueryParams))
 		{
-			// This should be on the arrow tip! 
-			/*
-			// Blocking hit! Process damage/effects
-			AActor* HitActor = Hit.GetActor();
-			EPhysicalSurface ObjectSurfaceType = UPhysicalMaterial::DetermineSurfaceType(Hit.PhysMaterial.Get());
-
-			AATHAscila* MyPlayer = Cast<AATHAscila>(MyOwner);
-			CheckArrowParameters();
-			float ActualDamage = ArrowBaseDamage;
-			if (ObjectSurfaceType == SURFACE_HEADARMOUR)
-			{
-				ActualDamage = 100.0f;
-			}
-			else if (ObjectSurfaceType == SURFACE_CHESTARMOUR)
-			{
-				ActualDamage = ActualDamage;
-			}
-			else if(ObjectSurfaceType == SURFACE_DEFAULTARMOUR)
-			{
-				ActualDamage = ActualDamage * 0.5f;
-			}*/UE_LOG(LogTemp, Error, TEXT("Hit!"));
-
-			ArrowTransform.SetScale3D(BowSize);
-			ArrowTransform.SetLocation(GetActorLocation());
+			//Hit.ImpactPoint
+			//DrawDebugLine(GetWorld(), CamLocation, TraceEnd, FColor::Blue, true, -1, 0, 3);
 			// To convert FRotator to quart we normalize it then quaternion it
 			ArrowTransform.SetRotation((UKismetMathLibrary::FindLookAtRotation(EyeLocation, Hit.ImpactPoint).GetNormalized()).Quaternion());
+			UE_LOG(LogTemp, Error, TEXT("HIT"));
 		}
-		
+		else
+		{
+			ArrowTransform.SetRotation((UKismetMathLibrary::FindLookAtRotation(EyeLocation, TraceEnd).GetNormalized()).Quaternion());
+		}
 		SpawnArrow();
 	}
 	else
@@ -105,19 +97,18 @@ void AATHBow::FireArrow()
 		UE_LOG(LogTemp, Error, TEXT("No Owner Found!"));
 	}
 }
+
 void AATHBow::SpawnArrow()
 {
 	AATHArrow* DeferredArrow = Cast<AATHArrow>(UGameplayStatics::BeginDeferredActorSpawnFromClass(GetWorld(), ArrowClass, ArrowTransform,
 		ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn, this));
 	if (DeferredArrow != nullptr)
 	{
-		DeferredArrow->SetPowerVelocity(1000.0f);
+		DeferredArrow->SetPowerVelocity(3000.0f);
 		UGameplayStatics::FinishSpawningActor(DeferredArrow, ArrowTransform);
-		UE_LOG(LogTemp, Error, TEXT("Spawned Arrow"));
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("Missing Arrow"));
 	}
 
 }

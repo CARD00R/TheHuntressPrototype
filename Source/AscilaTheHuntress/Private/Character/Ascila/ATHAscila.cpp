@@ -814,6 +814,18 @@ void AATHAscila::SetPitch(float NewPitch)
 {
 	Pitch = NewPitch;
 }
+
+float AATHAscila::GetPitch()
+{
+	return Pitch;
+}
+
+APlayerCameraManager* AATHAscila::GetCameraManager()
+{
+	APlayerCameraManager *CamManager = GetWorld()->GetFirstPlayerController()->PlayerCameraManager;
+	return CamManager;
+}
+
 float AATHAscila::GetMaxPitch()
 {
 	return MaxPitch;
@@ -992,7 +1004,7 @@ void AATHAscila::Fire()
 {
 	SetBowStatus(EBowStatus::Ebs_FiringShot);
 	PlayAnimMontage(FireArrowMontage, 1.0f, NAME_None);
-	EquippedBow = Cast<AATHBow>(EquippedBow);
+	/*EquippedBow = Cast<AATHBow>(EquippedBow);
 	if(EquippedBow != nullptr)
 	{
 		EquippedBow->FireArrow();
@@ -1001,7 +1013,7 @@ void AATHAscila::Fire()
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed Cast"));
-	}
+	}*/
 }
 void AATHAscila::SpawnBow()
 {

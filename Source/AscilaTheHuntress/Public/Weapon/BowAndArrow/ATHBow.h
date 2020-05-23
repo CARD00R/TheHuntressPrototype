@@ -34,6 +34,10 @@ protected:
 	FVector BowStartLocation = FVector(-37, 0, 0);
 	FVector BowSize = FVector(1.3f, 1.3f, 1.3f);
 
+	//Test
+	UPROPERTY(EditInstanceOnly, Category = "Weapon Properties|Arrow")
+	float YawTest = 50.0f;
+
 	// Fire
 	void SpawnArrow();
 	
