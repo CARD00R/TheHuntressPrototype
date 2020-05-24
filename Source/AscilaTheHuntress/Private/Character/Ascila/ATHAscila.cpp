@@ -51,7 +51,7 @@ AATHAscila::AATHAscila()
 	GetCharacterMovement()->MaxWalkSpeed = JogSpeed;
 
 	GetCharacterMovement()->bUseControllerDesiredRotation = false;
-	bUseControllerRotationYaw = !bLerpYaw;
+	bUseControllerRotationYaw = true;
 }
 
 // Called when the game starts or when spawned
@@ -279,13 +279,10 @@ void AATHAscila::Sprint()
 	else if(ParentStance == EParentStance::Eps_Crouching)
 	{
 		SetStanceStatus(EStanceStatus::Ess_CrouchSprinting);
-		TargetMeshLocation = CrouchSprintMeshInitialiseLocation;
-		TargetCapsuleRadius = CrouchSprintCapsuleRadius;
-		TargetCapsuleHalfHeight = CrouchSprintCapsuleHalfHeight;
 		GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshPropertiesChange, CapsuleMeshAlpha, true);
 		SetRequestedStatus(ERequestStance::Ers_NA);
 	}
-	
+	GetCharacterMovement()->bUseControllerDesiredRotation = true;
 }
 void AATHAscila::SprintReleased()
 {
@@ -314,11 +311,9 @@ void AATHAscila::SprintReleased()
 			SetStanceStatus(EStanceStatus::Ess_CrouchIdling);
 		}
 		
-		TargetMeshLocation = CrouchMeshInitialiseLocation;
-		TargetCapsuleRadius = CrouchCapsuleRadius;
-		TargetCapsuleHalfHeight = CrouchCapsuleHalfHeight;
 		GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshPropertiesChange, CapsuleMeshAlpha, true);
 	}
+	GetCharacterMovement()->bUseControllerDesiredRotation = false;
 }
 void AATHAscila::RequestCrouchChange()
 {
@@ -390,25 +385,16 @@ void AATHAscila::AscilaCrouch()
 		if (StanceStatus == EStanceStatus::Ess_StandIdling)
 		{
 			SetStanceStatus(EStanceStatus::Ess_CrouchIdling);
-			TargetMeshLocation = CrouchMeshInitialiseLocation;
-			TargetCapsuleRadius = CrouchCapsuleRadius;
-			TargetCapsuleHalfHeight = CrouchCapsuleHalfHeight;
 			GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshPropertiesChange, CapsuleMeshAlpha, true);
 		}
 		else if (StanceStatus == EStanceStatus::Ess_StandJogging)
 		{
 			SetStanceStatus(EStanceStatus::Ess_CrouchWalking);
-			TargetMeshLocation = CrouchMeshInitialiseLocation;
-			TargetCapsuleRadius = CrouchCapsuleRadius;
-			TargetCapsuleHalfHeight = CrouchCapsuleHalfHeight;
 			GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshPropertiesChange, CapsuleMeshAlpha, true);
 		}
 		else
 		{
 			SetStanceStatus(EStanceStatus::Ess_CrouchSprinting);
-			TargetMeshLocation = CrouchSprintMeshInitialiseLocation;
-			TargetCapsuleRadius = CrouchSprintCapsuleRadius;
-			TargetCapsuleHalfHeight = CrouchSprintCapsuleHalfHeight;
 			GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshPropertiesChange, CapsuleMeshAlpha, true);
 		}
 		
@@ -436,9 +422,6 @@ void AATHAscila::AscilaUnCrouch()
 		}
 		
 		SetParentStanceStatus(EParentStance::Eps_Standing);
-		TargetMeshLocation = StandMeshInitialiseLocation;
-		TargetCapsuleRadius = StandCapsuleRadius;
-		TargetCapsuleHalfHeight = StandCapsuleHalfHeight;
 		GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshPropertiesChange, CapsuleMeshAlpha, true);
 	}
 	
@@ -559,42 +542,6 @@ void AATHAscila::DelayedSetJumpWindowF()
 {
 	JumpWindowOpen = false;
 }
-void AATHAscila::CapsuleMeshPropertiesChange()
-{
-	bool IsEqualHalfeight = false;
-	bool IsEqualRadius = false;
-	bool IsLocation = false;
-
-	if(!(FMath::IsNearlyEqual(GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight(), TargetCapsuleHalfHeight,CapsuleTolerance)))
-	{
-		GetCapsuleComponent()->SetCapsuleHalfHeight(FMath::Lerp(GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight(), TargetCapsuleHalfHeight, HeightAlpha));
-	}
-	else
-	{
-		IsEqualHalfeight = true;
-	}
-	if(!(FMath::IsNearlyEqual(GetCapsuleComponent()->GetUnscaledCapsuleRadius(), TargetCapsuleRadius, CapsuleTolerance)))
-	{
-		GetCapsuleComponent()->SetCapsuleRadius(FMath::Lerp(GetCapsuleComponent()->GetUnscaledCapsuleRadius(), TargetCapsuleRadius, RadiusAlpha));
-	}
-	else
-	{
-		IsEqualRadius = true;
-	}	
-	if(FVector::Dist(GetMesh()->GetRelativeLocation(), TargetMeshLocation) > CapsuleTolerance)
-	{
-		GetMesh()->SetRelativeLocation(FMath::Lerp(GetMesh()->GetRelativeLocation(), TargetMeshLocation, LocationAlpha));
-	}
-	else
-	{
-		IsLocation = true;
-	}
-
-	if(IsEqualHalfeight && IsEqualRadius && IsLocation)
-	{
-			GetWorldTimerManager().ClearTimer(CapsuleMeshProprtiesChangeTimer);
-	}
-}
 
 	#pragma endregion 
 
@@ -656,8 +603,6 @@ void AATHAscila::SetStanceStatus(EStanceStatus Status)
 		SetCharacterSpeed(RollSpeed);
 		break;
 	}
-
-	ChangeRotationRate();
 }
 EStanceStatus AATHAscila::GetStanceStatus()
 {
@@ -750,20 +695,6 @@ void AATHAscila::SetCharacterSpeed(float Speed)
 {
 	GetCharacterMovement()->MaxWalkSpeed = Speed;
 }
-void AATHAscila::ChangeRotationRate()
-{
-	if(StanceStatus == EStanceStatus::Ess_StandSprinting)
-	{
-		//bUseControllerRotationYaw = false;
-		GetCharacterMovement()->bUseControllerDesiredRotation = true;
-		//CharMovementComp->RotationRate = SprintingRotationRate;
-	}
-	else
-	{
-		//bUseControllerRotationYaw = true;
-		//CharMovementComp->bUseControllerDesiredRotation = false;
-	}
-}
 void AATHAscila::IdleCheck()
 {
 	if (bIdleCheck)
@@ -814,18 +745,10 @@ void AATHAscila::SetPitch(float NewPitch)
 {
 	Pitch = NewPitch;
 }
-
 float AATHAscila::GetPitch()
 {
 	return Pitch;
 }
-
-APlayerCameraManager* AATHAscila::GetCameraManager()
-{
-	APlayerCameraManager *CamManager = GetWorld()->GetFirstPlayerController()->PlayerCameraManager;
-	return CamManager;
-}
-
 float AATHAscila::GetMaxPitch()
 {
 	return MaxPitch;
@@ -834,7 +757,6 @@ float AATHAscila::GetMinPitch()
 {
 	return MinPitch;
 }
-
 bool AATHAscila::GetIsAiming()
 {
 	return bIsAiming;
@@ -932,7 +854,6 @@ void AATHAscila::SetAimReadyValue()
 		}
 	}
 }
-
 void AATHAscila::RequestDrawChange()
 {
 	// Shooting arrows makes you lose Health ? as a way to balance out otherwise you just continously shoot arrows ezpz?
@@ -979,7 +900,6 @@ void AATHAscila::SetArrowDrawnVariable(bool isArrowDrawn)
 {
 	bIsArrowDrawn = isArrowDrawn;
 }
-
 void AATHAscila::RequestFire()
 {
 	if (ParentStance != EParentStance::Eps_Dead)
@@ -1042,7 +962,6 @@ void AATHAscila::ChangeCameraProperties(float DistanceFromCamera, float CameraFO
 
 
 }
-
 void AATHAscila::SmoothCameraTransition()
 {
 	bool IsEqualArmLength = false;
@@ -1080,18 +999,20 @@ void AATHAscila::SmoothCameraTransition()
 
 	}
 }
-
+APlayerCameraManager* AATHAscila::GetCameraManager()
+{
+	APlayerCameraManager *CamManager = GetWorld()->GetFirstPlayerController()->PlayerCameraManager;
+	return CamManager;
+}
 void AATHAscila::FaceRotation(FRotator NewControlRotation, float DeltaTime)
 {
 	Super::FaceRotation(NewControlRotation, DeltaTime);
 }
-
 void AATHAscila::SetControllerRotationYawInput(bool SetYawTo)
 {
 	bLerpYaw = SetYawTo;
 	bUseControllerRotationYaw = bLerpYaw;
 }
-
 float AATHAscila::DistanceToObjectAbove()
 {
 	FVector StartLocation = FVector(0, 0, 0);
@@ -1116,7 +1037,6 @@ float AATHAscila::DistanceToObjectAbove()
 		return 1000;
 	}
 }
-
 float AATHAscila::PlayAnimMontage(UAnimMontage * AnimMontage, float InPlayRate, FName StartSectionName)
 {
 
@@ -1144,7 +1064,6 @@ float AATHAscila::PlayAnimMontage(UAnimMontage * AnimMontage, float InPlayRate, 
 	}
 	return 0.f;
 }
-
 void AATHAscila::StopAnimMontagePlaying(UAnimMontage* AnimMontage)
 {
 
@@ -1167,7 +1086,6 @@ void AATHAscila::StopAnimMontagePlaying(UAnimMontage* AnimMontage)
 
 	}
 }
-
 void AATHAscila::CallSetMoveToParameters(FVector TargetLocation, FRotator TargetRotation, float Speed)
 {
 	TargetMoveToLocation = TargetLocation;
@@ -1179,19 +1097,118 @@ void AATHAscila::MoveTo()
 {
 	bool IsEqualLocation = false;
 	bool IsEqualRotation = false;
+
+	FTransform TargetTransform;
 	
-	if (FVector::Dist(GetActorLocation(), TargetMoveToLocation) > 0.5)
+	TargetTransform.SetRotation(TargetMoveToRotation.GetNormalized().Quaternion());;
+	TargetTransform.SetLocation(TargetMoveToLocation);
+	TargetTransform.SetScale3D(GetActorScale());
+	
+	/*if (FVector::Dist(GetActorLocation(), TargetMoveToLocation) > 0.5)
 	{
 		SetActorLocation(FMath::Lerp(GetActorLocation(), TargetMoveToLocation, 0.05));
-		UE_LOG(LogTemp, Error, TEXT("DOINGG"));
+	}*/
+
+	if (!(UKismetMathLibrary::NearlyEqual_TransformTransform(GetActorTransform(), TargetTransform, 0.5, 0.5, 0.1)))
+	{
+
+		SetActorRelativeRotation(FMath::Lerp(GetActorRotation(), TargetMoveToRotation, 0.05));
+		SetActorLocation(FMath::Lerp(GetActorLocation(), TargetMoveToLocation, 0.05));
 	}
 	else
 	{
+		IsEqualLocation = true;
+		IsEqualRotation = true;
+	}
+
+	if(IsEqualLocation && IsEqualRotation)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ENDED MOVE TO TIMER"));
 		GetWorldTimerManager().ClearTimer(MoveToHandle);
-		UE_LOG(LogTemp, Error, TEXT("DONE"));
 	}
 }
+void AATHAscila::CapsuleMeshPropertiesChange()
+{
+	if (ParentStance == EParentStance::Eps_Crouching)
+	{
+		if (StanceStatus == EStanceStatus::Ess_CrouchSprinting)
+		{
+			TargetCapsuleHalfHeight = CrouchSprintCapsuleHalfHeight;
+			TargetCapsuleRadius = CrouchSprintCapsuleRadius;
+			TargetMeshLocation = CrouchSprintMeshInitialiseLocation;
+		}
+		else
+		{
+			TargetCapsuleHalfHeight = CrouchCapsuleHalfHeight;
+			TargetCapsuleRadius = CrouchCapsuleRadius;
+			TargetMeshLocation = CrouchMeshInitialiseLocation;
+		}
+	}
+	else if (ParentStance == EParentStance::Eps_Standing)
+	{
+		TargetCapsuleHalfHeight = StandCapsuleHalfHeight;
+		TargetCapsuleRadius = StandCapsuleRadius;
+		TargetMeshLocation = StandMeshInitialiseLocation;
+	}
+	else if (ParentStance == EParentStance::Eps_InAir)
+	{
+		TargetCapsuleHalfHeight = StandCapsuleHalfHeight;
+		TargetCapsuleRadius = StandCapsuleRadius;
+		TargetMeshLocation = StandMeshInitialiseLocation;
+	}
+	else if (ParentStance == EParentStance::Eps_Rolling)
+	{
 
+	}
+	else if (ParentStance == EParentStance::Eps_Parkouring)
+	{
+		if (ParkourStatus == EParkourStatus::Eps_BracedIdling)
+		{
+			TargetCapsuleHalfHeight = BracedCapsuleHalfHeight;
+			TargetCapsuleRadius = BracedCapsuleRadius;
+			TargetMeshLocation = BracedInitialiseMeshLocation;
+		}
+	}
+
+
+	bool IsEqualHalfeight = false;
+	bool IsEqualRadius = false;
+	bool IsLocation = false;
+
+	if (!(FMath::IsNearlyEqual(GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight(), TargetCapsuleHalfHeight, CapsuleTolerance)))
+	{
+		GetCapsuleComponent()->SetCapsuleHalfHeight(FMath::Lerp(GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight(), TargetCapsuleHalfHeight, HeightAlpha));
+	}
+	else
+	{
+		IsEqualHalfeight = true;
+	}
+	if (!(FMath::IsNearlyEqual(GetCapsuleComponent()->GetUnscaledCapsuleRadius(), TargetCapsuleRadius, CapsuleTolerance)))
+	{
+		GetCapsuleComponent()->SetCapsuleRadius(FMath::Lerp(GetCapsuleComponent()->GetUnscaledCapsuleRadius(), TargetCapsuleRadius, RadiusAlpha));
+	}
+	else
+	{
+		IsEqualRadius = true;
+	}
+	if (FVector::Dist(GetMesh()->GetRelativeLocation(), TargetMeshLocation) > CapsuleTolerance)
+	{
+		GetMesh()->SetRelativeLocation(FMath::Lerp(GetMesh()->GetRelativeLocation(), TargetMeshLocation, LocationAlpha));
+	}
+	else
+	{
+		IsLocation = true;
+	}
+
+	if (IsEqualHalfeight && IsEqualRadius && IsLocation)
+	{
+		GetWorldTimerManager().ClearTimer(CapsuleMeshProprtiesChangeTimer);
+	}
+}
+void AATHAscila::CapsuleMeshPropertiesTimer()
+{
+	GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshPropertiesChange, CapsuleMeshAlpha, true);
+}
 	#pragma endregion
 
 	#pragma region Parkour
@@ -1232,16 +1249,16 @@ void AATHAscila::LedgeTraceHeight()
 		WallHeightLocation = Hit.Location;
 
 		// This checks to see if the character Pelvis Location.Z is a certain height below the Ledge Location.Z
-		float PelvisToLedgeHeightDifferenceLimit = -75.f;
+		float PelvisToLedgeHeightDifferenceLimit = -100.f;
 		float PelvisZLocation = UKismetMathLibrary::Abs(GetMesh()->GetSocketLocation(PelvisSocketName).Z);
 		float WallHeightZLocation = UKismetMathLibrary::Abs(WallHeightLocation.Z);			
-		float PelvisToLedgeHeightDifference = PelvisZLocation - WallHeightZLocation;
+		float PelvisToLedgeHeightDifference = WallHeightZLocation - PelvisZLocation;
 
 
 		bool bIsPelvisCloseEnoughToLedge = UKismetMathLibrary::InRange_FloatFloat(PelvisToLedgeHeightDifference,PelvisToLedgeHeightDifferenceLimit,
 			0, true,true);
 		
-		//UE_LOG(LogTemp, Error, TEXT("%f"), PelvisToLedgeHeightDifference);
+		UE_LOG(LogTemp, Error, TEXT("%f"), PelvisToLedgeHeightDifference);
 		
 		if(bIsPelvisCloseEnoughToLedge)
 		{
@@ -1269,7 +1286,6 @@ void AATHAscila::GrabLedge()
 		EnterRMState();
 		
 		bCanGrab = true;
-		bUseControllerRotationYaw = false;
 
 		SetParentStanceStatus(EParentStance::Eps_Parkouring);
 		SetParkourStatus(EParkourStatus::Eps_BracedIdling);
@@ -1277,18 +1293,16 @@ void AATHAscila::GrabLedge()
 		FVector WallNormalAdjusted = WallNormal * FVector(22.0f, 22.0f, 0);
 		
 		FVector TargetRelativeLocation2 = FVector(WallNormalAdjusted.X + WallTraceLocation.X, WallNormalAdjusted.Y + WallTraceLocation.Y,
-			WallHeightLocation.Z - 130.0f);
+			WallHeightLocation.Z - ZHeightParkourTest);
 
-		//FRotator TargetRelativeRotation = FRotator(WallNormal.ToOrientationRotator().Roll-25, WallNormal.ToOrientationRotator().Pitch, 
-		//	WallNormal.ToOrientationRotator().Yaw);
+		FRotator TargetRelativeRotation = FRotator(WallNormal.ToOrientationRotator().Roll, WallNormal.ToOrientationRotator().Pitch,
+			WallNormal.ToOrientationRotator().Yaw);
 
 		FLatentActionInfo info = FLatentActionInfo();
 		info.CallbackTarget = this;
-
-		FRotator TargetRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), WallTraceLocation);
-
-		//UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), TargetRelativeLocation2, TargetRotation, false, false, 0.13f, false, EMoveComponentAction::Move, info);
-		CallSetMoveToParameters(TargetRelativeLocation2, TargetRotation, 0.001);
+		
+		UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), TargetRelativeLocation2, GetActorRotation(), false, false, 0.13f, false, EMoveComponentAction::Move, info);
+		//CallSetMoveToParameters(TargetRelativeLocation2, GetActorRotation(), 0.001);
 
 		GetCharacterMovement()->StopMovementImmediately();
 	}
@@ -1296,9 +1310,12 @@ void AATHAscila::GrabLedge()
 
 void AATHAscila::ExitBrace()
 {
-	ExitRMState();
-	SetParentStanceStatus(EParentStance::Eps_InAir);
-	SetParkourStatus(EParkourStatus::Eps_NA);
+	if(ParkourStatus != EParkourStatus::Eps_BracedClimbingOver)
+	{
+		ExitRMState();
+		SetParentStanceStatus(EParentStance::Eps_InAir);
+		SetParkourStatus(EParkourStatus::Eps_NA);
+	}
 }
 
 void AATHAscila::BracedClimbLedge()
@@ -1316,15 +1333,24 @@ void AATHAscila::EnterRMState()
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetCharacterMovement()->SetMovementMode(MOVE_Flying);
+	bUseControllerRotationYaw = false;
+	GetCharacterMovement()->bUseControllerDesiredRotation = false;
 }
 void AATHAscila::ExitRMState()
 {
+	if (ParkourStatus == EParkourStatus::Eps_BracedClimbingOver)
+	{
+		SetParentStanceStatus(EParentStance::Eps_Standing);
+		SetParkourStatus(EParkourStatus::Eps_NA);
+		SetStanceStatus(EStanceStatus::Ess_StandJogging);
+	}
+	GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshPropertiesChange, 0.0035, true);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-	//SetParentStanceStatus(Eparen)
-	SetParkourStatus(EParkourStatus::Eps_NA);
 	bUseControllerRotationYaw = true;
+	GetCharacterMovement()->bUseControllerDesiredRotation = false;
+
 }
 
 // State Getters
@@ -1332,4 +1358,5 @@ bool AATHAscila::GetCanGrab()
 {
 	return bCanGrab;
 }
+
 	#pragma endregion

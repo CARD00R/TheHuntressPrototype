@@ -4,17 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimNotifies/AnimNotify.h"
-#include "ATHFireArrow.generated.h"
-
+#include "ATHExitRMState.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class ASCILATHEHUNTRESS_API UATHFireArrow : public UAnimNotify
+class ASCILATHEHUNTRESS_API UATHExitRMState : public UAnimNotify
 {
 	GENERATED_BODY()
-	
+
 public:
 	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation) override;
 };

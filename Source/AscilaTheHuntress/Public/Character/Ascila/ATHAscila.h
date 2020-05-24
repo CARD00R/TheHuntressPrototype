@@ -173,8 +173,8 @@ protected:
 	float CapsuleMeshAlpha = 0.005f;
 	UPROPERTY(EditAnywhere, Category = "Components|Capsule Properties")
 	float CapsuleTolerance = 0.5f;
-
 	void CapsuleMeshPropertiesChange();
+
 	FTimerHandle CapsuleMeshProprtiesChangeTimer;
 	#pragma endregion 
 
@@ -326,6 +326,10 @@ protected:
 	bool bIsClimbing = false;
 	bool bIsBraced = false;
 	FName PelvisSocketName = "Pelvis_Socket";
+	// Capsule Sizes/Heights
+	float BracedCapsuleRadius = 35.0f;
+	float BracedCapsuleHalfHeight = 50;
+	FVector BracedInitialiseMeshLocation = FVector(-9.0f,-4.5f,-141.0f);
 	//Traces
 		// Forward
 	UFUNCTION(BlueprintCallable)
@@ -401,6 +405,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Parkour")
 	void ExitRMState();
 	bool GetCanGrab();
-
+	UFUNCTION(BlueprintCallable, Category = "Parkour")
+	void CapsuleMeshPropertiesTimer();
+	UPROPERTY(EditInstanceOnly, Category = "Parkour")
+	float ZHeightParkourTest = 88.0f;
 
 };
