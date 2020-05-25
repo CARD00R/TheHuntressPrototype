@@ -2,6 +2,7 @@
 
 
 #include "Character/Ascila/ATHAscila.h"
+#include "Components/ArrowComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -45,6 +46,18 @@ AATHAscila::AATHAscila()
 	GetCapsuleComponent()->SetCapsuleRadius(StandCapsuleRadius);
 	GetCapsuleComponent()->SetCapsuleHalfHeight(StandCapsuleHalfHeight);
 
+	// Arrow Components
+		// Move Arrows
+	ArrowMoveRightComp = CreateDefaultSubobject<UArrowComponent>(TEXT("ArrowMoveRightComp"));
+	ArrowMoveRightComp->SetupAttachment(RootComponent);
+	ArrowMoveLeftComp = CreateDefaultSubobject<UArrowComponent>(TEXT("ArrowMoveLeftComp"));
+	ArrowMoveLeftComp->SetupAttachment(RootComponent);
+		// Jump Arrows
+	ArrowJumpRightComp = CreateDefaultSubobject<UArrowComponent>(TEXT("ArrowJumpRightComp"));
+	ArrowJumpRightComp->SetupAttachment(RootComponent);
+	ArrowJumpLeftComp = CreateDefaultSubobject<UArrowComponent>(TEXT("ArrowJumpLeftComp"));
+	ArrowJumpLeftComp->SetupAttachment(RootComponent);
+	
 	// Movement Component
 	GetCharacterMovement()->GetNavAgentPropertiesRef().bCanCrouch = true;
 	GetCharacterMovement()->GetNavAgentPropertiesRef().bCanJump = true;
@@ -86,14 +99,14 @@ void AATHAscila::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 	PlayerInputComponent->BindAction("DrawArrow", IE_Pressed, this, &AATHAscila::RequestDrawChange);
 	PlayerInputComponent->BindAction("DrawArrow", IE_Released, this, &AATHAscila::RequestFire);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AATHAscila::RequestJump);
-	
-	//PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AATHAscila::RequestDrawBow);
 }
 
 	#pragma region  General Input
 
 void AATHAscila::MoveForward(float value)
 {
+	InputForward = value;
+
 	if(ParentStance != EParentStance::Eps_Parkouring)
 	{
 		// Pressing forward/backward...
@@ -106,11 +119,6 @@ void AATHAscila::MoveForward(float value)
 			else
 			{
 			}
-			bIsMovingForwardBackward = true;
-
-			if (value > 0) { bIsMovingforward = true; }
-			else if (value < 0) { bIsMovingforward = false; }
-
 			if (ParentStance == EParentStance::Eps_Standing)
 			{
 				if (StanceStatus == EStanceStatus::Ess_StandSprinting && value > 0)
@@ -147,11 +155,8 @@ void AATHAscila::MoveForward(float value)
 		{
 			if (StanceStatus != EStanceStatus::Ess_LandRolling)
 			{
-
-				bIsMovingForwardBackward = false;
-
 				// not moving forward and right
-				if (!bIsMovingForwardBackward && !bIsMovingRightLeft)
+				if (InputForward == 0 && InputRight == 0)
 				{
 					// Is idle check animation
 					IdleCheck();
@@ -172,15 +177,12 @@ void AATHAscila::MoveForward(float value)
 }
 void AATHAscila::MoveRight(float value)
 {
+	InputRight = value;
+	
 	if (ParentStance != EParentStance::Eps_Parkouring)
 	{
 		if (value != 0)
 		{
-			bIsMovingRightLeft = true;
-
-			if (value > 0) { bIsMovingRight = true; }
-			else if (value < 0) { bIsMovingRight = false; }
-
 			if (ParentStance == EParentStance::Eps_Standing)
 			{
 				if (StanceStatus == EStanceStatus::Ess_StandIdleJumping ||
@@ -202,12 +204,24 @@ void AATHAscila::MoveRight(float value)
 
 			bIdleCheck = true;
 		}
-		else
-		{
-			bIsMovingRightLeft = false;
-		}
-
 		AddMovementInput(GetActorRightVector()* value);
+	}
+	else
+	{
+		if(bIsBraced)
+		{
+			if (value != 0)
+			{
+				BracedMove(value);
+			}
+			else
+			{
+				if(ParkourStatus != EParkourStatus::Eps_BracedClimbingOver)
+				{
+					SetParkourStatus(EParkourStatus::Eps_BracedIdling);
+				}
+			}
+		}
 	}
 }
 void AATHAscila::LookUp(float value)
@@ -247,7 +261,7 @@ void AATHAscila::RequestSprint()
 				{
 					if (ParentStance != EParentStance::Eps_Rolling)
 					{
-						if (bIsMovingForwardBackward && !bIsMovingRightLeft)
+						if (InputForward > 0 && InputRight == 0)
 						{
 							Sprint();
 						}
@@ -288,7 +302,7 @@ void AATHAscila::SprintReleased()
 {
 	if(StanceStatus == EStanceStatus::Ess_StandSprinting)
 	{
-		if (bIsMovingForwardBackward)
+		if (InputForward != 0)
 		{
 			SetStanceStatus(EStanceStatus::Ess_StandJogging);
 		}
@@ -302,7 +316,7 @@ void AATHAscila::SprintReleased()
 	}
 	else if(StanceStatus == EStanceStatus::Ess_CrouchSprinting)
 	{
-		if (bIsMovingForwardBackward)
+		if (InputForward != 0)
 		{
 			SetStanceStatus(EStanceStatus::Ess_CrouchWalking);
 		}
@@ -333,7 +347,7 @@ void AATHAscila::RequestCrouchChange()
 				}
 				else
 				{
-					if (bIsMovingRightLeft || bIsMovingForwardBackward)
+					if (InputRight != 0 || InputForward != 0)
 					{
 						SetRequestedStatus(ERequestStance::Ers_CrouchWalking);
 					}
@@ -363,7 +377,7 @@ void AATHAscila::RequestCrouchChange()
 			}
 			else
 			{
-				if (bIsMovingRightLeft || bIsMovingForwardBackward)
+				if (InputRight != 0 || InputForward != 0)
 				{
 					SetRequestedStatus(ERequestStance::Ers_CrouchWalking);
 				}
@@ -431,10 +445,20 @@ void AATHAscila::RequestJump()
 {
 	if (ParentStance != EParentStance::Eps_Dead)
 	{
-		if (ParentStance == EParentStance::Eps_Parkouring && bIsMovingforward)
+		if (ParentStance == EParentStance::Eps_Parkouring)
 		{
-			BracedClimbLedge();
-			//UE_LOG(LogTemp, Error, TEXT("JUMPED"));
+			if(InputForward > 0)
+			{
+				BracedClimbLedge();
+			}
+			if (InputForward < 0)
+			{
+
+			}
+			if(InputRight != 0)
+			{
+				BracedJump(InputRight);
+			}
 		}		
 		else if (ParentStance != EParentStance::Eps_InAir)
 		{
@@ -1258,23 +1282,122 @@ void AATHAscila::LedgeTraceHeight()
 		bool bIsPelvisCloseEnoughToLedge = UKismetMathLibrary::InRange_FloatFloat(PelvisToLedgeHeightDifference,PelvisToLedgeHeightDifferenceLimit,
 			0, true,true);
 		
-		UE_LOG(LogTemp, Error, TEXT("%f"), PelvisToLedgeHeightDifference);
+		//UE_LOG(LogTemp, Error, TEXT("%f"), PelvisToLedgeHeightDifference);
 		
 		if(bIsPelvisCloseEnoughToLedge)
 		{
-			if(bIsClimbing)
-			{
-
-			}
-			else
-			{
-				GrabLedge();
-			}
+			GrabLedge();
 		}
 	}
 	else
 	{
 
+	}
+}
+
+void AATHAscila::LeftMoveLedgeTracer()
+{
+	if(ParkourStatus == EParkourStatus::Eps_BracedIdling || ParkourStatus == EParkourStatus::Eps_BracedMovingLeft 
+		|| ParkourStatus == EParkourStatus::Eps_BracedMovingRight)
+	{
+		// Trace Params
+		FVector StartLocation = ArrowMoveLeftComp->GetComponentLocation();
+		FVector EndLocation = StartLocation;
+		TArray<AActor*> MakeArray;
+		FHitResult Hit;
+
+		if (UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), StartLocation, EndLocation, 20.0f, 60.0f, COLLISION_LEDGE, false, MakeArray,
+			EDrawDebugTrace::ForOneFrame, Hit, true, FLinearColor::Red, FLinearColor::Green, 0))
+		{
+			bCanBracedMoveLeft = true;
+		}
+		else
+		{
+			bCanBracedMoveLeft = false;
+			LeftJumpLedgeTracer();
+		}
+	}
+}
+
+void AATHAscila::RightMoveLedgeTracer()
+{
+	if (ParkourStatus == EParkourStatus::Eps_BracedIdling || ParkourStatus == EParkourStatus::Eps_BracedMovingRight 
+		|| ParkourStatus == EParkourStatus::Eps_BracedMovingLeft)
+	{
+		// Trace Params
+		FVector StartLocation = ArrowMoveRightComp->GetComponentLocation();
+		FVector EndLocation = StartLocation;
+		TArray<AActor*> MakeArray;
+		FHitResult Hit;
+
+		if (UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), StartLocation, EndLocation, 20.0f, 60.0f, COLLISION_LEDGE, false, MakeArray,
+			EDrawDebugTrace::ForOneFrame, Hit, true, FLinearColor::Red, FLinearColor::Green, 0))
+		{
+			bCanBracedMoveRight = true;
+		}
+		else
+		{
+			bCanBracedMoveRight = false;
+			RightJumpLedgeTracer();
+		}
+	}
+}
+
+void AATHAscila::LeftJumpLedgeTracer()
+{
+	if (ParkourStatus == EParkourStatus::Eps_BracedIdling || ParkourStatus == EParkourStatus::Eps_BracedMovingRight || ParkourStatus == EParkourStatus::Eps_BracedMovingLeft)
+	{
+		// Trace Params
+		FVector StartLocation = ArrowJumpLeftComp->GetComponentLocation();
+		FVector EndLocation = StartLocation;
+		TArray<AActor*> MakeArray;
+		FHitResult Hit;
+
+		if (UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), StartLocation, EndLocation, 20.0f, 60.0f, COLLISION_LEDGE, false, MakeArray,
+			EDrawDebugTrace::ForOneFrame, Hit, true, FLinearColor::Red, FLinearColor::Green, 0))
+		{
+			if(!bCanBracedMoveLeft)
+			{
+				bCanBracedJumpLeft = true;
+			}
+			else
+			{
+				bCanBracedJumpLeft = false;
+			}
+		}
+		else
+		{
+			bCanBracedJumpLeft = false;
+		}
+	}
+}
+
+void AATHAscila::RightJumpLedgeTracer()
+{
+	if (ParkourStatus == EParkourStatus::Eps_BracedIdling || ParkourStatus == EParkourStatus::Eps_BracedMovingRight || ParkourStatus == EParkourStatus::Eps_BracedMovingLeft)
+	{
+		// Trace Params
+		FVector StartLocation = ArrowJumpRightComp->GetComponentLocation();
+		FVector EndLocation = StartLocation;
+		TArray<AActor*> MakeArray;
+		FHitResult Hit;
+
+		if (UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), StartLocation, EndLocation, 20.0f, 60.0f, COLLISION_LEDGE, false, MakeArray,
+			EDrawDebugTrace::ForOneFrame, Hit, true, FLinearColor::Red, FLinearColor::Green, 0))
+		{
+			if(!bCanBracedMoveRight)
+			{
+				bCanBracedJumpRight = true;
+			}
+			else
+			{
+				bCanBracedJumpRight = false;
+			}
+		}
+		else
+		{
+			bCanBracedJumpRight = false;
+		}
 	}
 }
 
@@ -1285,10 +1408,9 @@ void AATHAscila::GrabLedge()
 	{
 		EnterRMState();
 		
-		bCanGrab = true;
-
 		SetParentStanceStatus(EParentStance::Eps_Parkouring);
 		SetParkourStatus(EParkourStatus::Eps_BracedIdling);
+		bIsBraced = true;
 
 		FVector WallNormalAdjusted = WallNormal * FVector(22.0f, 22.0f, 0);
 		
@@ -1324,6 +1446,50 @@ void AATHAscila::BracedClimbLedge()
 	{
 		GetCharacterMovement()->SetMovementMode(MOVE_Flying);
 		SetParkourStatus(EParkourStatus::Eps_BracedClimbingOver);
+		UE_LOG(LogTemp, Error, TEXT("JUMPED"));
+	}
+}
+
+void AATHAscila::BracedMove(float inputValue)
+{
+	if(inputValue != 0)
+	{
+		//Requesting Move Right
+		if(inputValue > 0)
+		{
+			if (bCanBracedMoveRight)
+			{
+				SetParkourStatus(EParkourStatus::Eps_BracedMovingRight);
+			}
+			else
+			{
+				//SetParkourStatus(EParkourStatus::Eps_BracedLeaningRight);
+			}
+		}
+		//Requesting MoveLeft
+		else
+		{
+			if (bCanBracedMoveLeft)
+			{
+				SetParkourStatus(EParkourStatus::Eps_BracedMovingLeft);
+			}
+			else
+			{
+				//SetParkourStatus(EParkourStatus::Eps_BracedLeaningLeft);
+			}
+		}
+	}
+}
+
+void AATHAscila::BracedJump(float inputValue)
+{
+	if(inputValue > 0)
+	{
+		SetParkourStatus(EParkourStatus::Eps_BracedJumpingRight);
+	}
+	else if(inputValue < 0)
+	{
+		SetParkourStatus(EParkourStatus::Eps_BracedJumpingLeft);
 	}
 }
 
@@ -1354,9 +1520,10 @@ void AATHAscila::ExitRMState()
 }
 
 // State Getters
+/*
 bool AATHAscila::GetCanGrab()
 {
 	return bCanGrab;
 }
-
+*/
 	#pragma endregion

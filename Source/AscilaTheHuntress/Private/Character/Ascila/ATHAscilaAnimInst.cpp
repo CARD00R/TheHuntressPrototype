@@ -46,7 +46,7 @@ void UATHAscilaAnimInst::UpdateAnimationProperties(float DeltaTime)
 			ParkourStatus = AscilaCharacter->GetParkourStatus();
 			bIsAiming = AscilaCharacter->GetIsAiming();
 			bNeedsToLand = AscilaCharacter->GetNeedsToLand();
-			bCanGrab = AscilaCharacter->GetCanGrab();
+			//bCanGrab = AscilaCharacter->GetCanGrab();
 			AscilaCharacter->SetShouldRollLand(bShouldLandRoll);
 			AscilaCharacter->SetShouldHardLand(bShouldHardLand);
 

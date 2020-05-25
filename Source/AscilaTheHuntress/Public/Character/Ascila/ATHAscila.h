@@ -10,6 +10,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class AATHAscilaPC;
 class AATHBow;
+class UArrowComponent;
 
 UENUM(BlueprintType)
 enum class EParentStance : uint8
@@ -48,9 +49,12 @@ enum class EParkourStatus : uint8
 {
 	Eps_NA UMETA(DisplayName = "NA"),
 	Eps_BracedIdling UMETA(DisplayName = "BracedIdling"),
-	Eps_BracedMoving UMETA(DisplayName = "BracedMoving"),
-	Eps_BracedRightJumping UMETA(DisplayName = "BracedRightJumping"),
-	Eps_BracedLeftJumping UMETA(DisplayName = "BracedLeftJumping"),
+	Eps_BracedMovingRight UMETA(DisplayName = "BracedMovingRight"),
+	Eps_BracedMovingLeft UMETA(DisplayName = "BracedMovingLeft"),
+	//Eps_BracedLeaningRight UMETA(DisplayName = "BracedLeaningRight"),
+	//Eps_BracedLeaningLeft UMETA(DisplayName = "BracedLeaningLeft"),
+	Eps_BracedJumpingRight UMETA(DisplayName = "BracedJumpingRight"),
+	Eps_BracedJumpingLeft UMETA(DisplayName = "BracedJumpingLeft"),
 	Eps_BracedClimbingOver UMETA(DisplayName = "BracedClimbingOver"),
 	Eps_Max UMETA(DisplayName = "DefaultMax")
 };
@@ -90,10 +94,19 @@ public:
 
 	#pragma  region Components
 	// Components
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components|Camera")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components|Camera", meta = (DisplayName = "Spring Arm Component"))
 		USpringArmComponent* SpringArmComp;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components|Camera")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components|Camera", meta = (DisplayName = "Camera Component"))
 		UCameraComponent* CameraComp;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components|Parkour", meta = (DisplayName = "Arrow Right Component"))
+		UArrowComponent* ArrowMoveRightComp;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components|Parkour", meta = (DisplayName = "Arrow Left Component"))
+		UArrowComponent* ArrowMoveLeftComp;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components|Parkour", meta = (DisplayName = "Arrow Left Component"))
+		UArrowComponent* ArrowJumpLeftComp;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components|Parkour", meta = (DisplayName = "Arrow Left Component"))
+		UArrowComponent* ArrowJumpRightComp;
+	
 	// Player Controller
 	AATHAscilaPC* AscilaPC; 
 	#pragma endregion
@@ -179,11 +192,10 @@ protected:
 	#pragma endregion 
 
 	// Input
-	bool bIsMovingForwardBackward = false;
 	UPROPERTY(VisibleInstanceOnly, Category = "Movement")
-	bool bIsMovingforward = false;
-	bool bIsMovingRightLeft = false;
-	bool bIsMovingRight = false;
+	float InputForward = 0.0f;
+	UPROPERTY(VisibleInstanceOnly, Category = "Movement")
+	float InputRight = 0.0f;
 	void MoveForward(float value);
 	void MoveRight(float value);
 	void LookUp(float value);
@@ -322,10 +334,16 @@ protected:
 
 	#pragma region Parkour
 	// States
-	bool bCanGrab = false;
-	bool bIsClimbing = false;
-	bool bIsBraced = false;
 	FName PelvisSocketName = "Pelvis_Socket";
+	
+		//Braced
+	//bool bCanGrab = false;
+	bool bIsBraced = false;
+	bool bCanBracedMoveRight = false;
+	bool bCanBracedMoveLeft = false;
+	bool bCanBracedJumpRight = false;
+	bool bCanBracedJumpLeft = false;
+
 	// Capsule Sizes/Heights
 	float BracedCapsuleRadius = 35.0f;
 	float BracedCapsuleHalfHeight = 50;
@@ -334,20 +352,30 @@ protected:
 		// Forward
 	UFUNCTION(BlueprintCallable)
 		void LedgeTraceForward();
-	UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
 	FVector WallTraceLocation;
-	UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
 	FVector WallNormal;
 		// Height
 	UFUNCTION(BlueprintCallable)
 		void LedgeTraceHeight();
 	UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
 	FVector WallHeightLocation;
+		// Move Left Right
+	UFUNCTION(BlueprintCallable, Category = "Parkour")
+	void LeftMoveLedgeTracer();
+	UFUNCTION(BlueprintCallable, Category = "Parkour")
+	void RightMoveLedgeTracer();
+		// Jump Left Right
+	UFUNCTION(BlueprintCallable, Category = "Parkour")
+	void LeftJumpLedgeTracer();
+	UFUNCTION(BlueprintCallable, Category = "Parkour")
+	void RightJumpLedgeTracer();
 	// Parkour Movement
 		// Braced
 	void GrabLedge();
 	void ExitBrace();
 	void BracedClimbLedge();
+	void BracedMove(float inputValue);
+	void BracedJump(float inputValue);
 	
 	#pragma endregion
 
@@ -404,7 +432,7 @@ public:
 	void EnterRMState();
 	UFUNCTION(BlueprintCallable, Category = "Parkour")
 	void ExitRMState();
-	bool GetCanGrab();
+	//bool GetCanGrab();
 	UFUNCTION(BlueprintCallable, Category = "Parkour")
 	void CapsuleMeshPropertiesTimer();
 	UPROPERTY(EditInstanceOnly, Category = "Parkour")

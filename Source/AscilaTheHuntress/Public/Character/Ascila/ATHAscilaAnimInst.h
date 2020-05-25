@@ -105,7 +105,7 @@ protected:
 
 	#pragma region Parkour
 
-	bool bCanGrab = false;
+	//bool bCanGrab = false;
 
 	#pragma endregion  
 
