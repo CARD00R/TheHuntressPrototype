@@ -102,152 +102,174 @@ void AATHAscila::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 }
 
 	#pragma region  General Input
-
+void AATHAscila::SetCameraEnabled(bool shouldEnable)
+{
+	bCameraMovementEnabled = shouldEnable;
+}
+void AATHAscila::SetButtonEnabled(bool shouldEnable)
+{
+	bCharacterMovementEnabled = shouldEnable;
+}
 void AATHAscila::MoveForward(float value)
 {
 	InputForward = value;
-
-	if(ParentStance != EParentStance::Eps_Parkouring)
+	if(bCharacterMovementEnabled)
 	{
-		// Pressing forward/backward...
-		if (value != 0)
+		if (ParentStance != EParentStance::Eps_Parkouring)
 		{
-			if (ParentStance == EParentStance::Eps_Parkouring)
+			// Pressing forward/backward...
+			if (value != 0)
 			{
+				if (ParentStance == EParentStance::Eps_Parkouring)
+				{
 
+				}
+				else
+				{
+				}
+				if (ParentStance == EParentStance::Eps_Standing)
+				{
+					if (StanceStatus == EStanceStatus::Ess_StandSprinting && value > 0)
+					{
+
+					}
+					else if (StanceStatus == EStanceStatus::Ess_StandIdleJumping ||
+						StanceStatus == EStanceStatus::Ess_StandJogJumping ||
+						StanceStatus == EStanceStatus::Ess_StandSprintJumping)
+					{
+
+					}
+					else
+					{
+						SetStanceStatus(EStanceStatus::Ess_StandJogging);
+					}
+				}
+				else if (ParentStance == EParentStance::Eps_Crouching)
+				{
+					if (StanceStatus == EStanceStatus::Ess_CrouchSprinting && value > 0)
+					{
+
+					}
+					else
+					{
+						SetStanceStatus(EStanceStatus::Ess_CrouchWalking);
+					}
+				}
+
+				bIdleCheck = true;
 			}
+			// Not pressing forward/backward
 			else
 			{
-			}
-			if (ParentStance == EParentStance::Eps_Standing)
-			{
-				if (StanceStatus == EStanceStatus::Ess_StandSprinting && value > 0)
+				if (StanceStatus != EStanceStatus::Ess_LandRolling)
 				{
+					// not moving forward and right
+					if (InputForward == 0 && InputRight == 0)
+					{
+						// Is idle check animation
+						IdleCheck();
+					}
+					else
+					{
 
-				}
-				else if (StanceStatus == EStanceStatus::Ess_StandIdleJumping ||
-					StanceStatus == EStanceStatus::Ess_StandJogJumping ||
-					StanceStatus == EStanceStatus::Ess_StandSprintJumping)
-				{
-
+					}
 				}
 				else
 				{
-					SetStanceStatus(EStanceStatus::Ess_StandJogging);
-				}
-			}
-			else if (ParentStance == EParentStance::Eps_Crouching)
-			{
-				if (StanceStatus == EStanceStatus::Ess_CrouchSprinting && value > 0)
-				{
-
-				}
-				else
-				{
-					SetStanceStatus(EStanceStatus::Ess_CrouchWalking);
+					AddMovementInput(GetActorForwardVector() * 1);
 				}
 			}
 
-			bIdleCheck = true;
+			AddMovementInput(GetActorForwardVector()*value);
 		}
-		// Not pressing forward/backward
-		else
-		{
-			if (StanceStatus != EStanceStatus::Ess_LandRolling)
-			{
-				// not moving forward and right
-				if (InputForward == 0 && InputRight == 0)
-				{
-					// Is idle check animation
-					IdleCheck();
-				}
-				else
-				{
-
-				}
-			}
-			else
-			{
-				AddMovementInput(GetActorForwardVector() * 1);
-			}
-		}
-
-		AddMovementInput(GetActorForwardVector()*value);
 	}
 }
 void AATHAscila::MoveRight(float value)
 {
 	InputRight = value;
-	
-	if (ParentStance != EParentStance::Eps_Parkouring)
+	if (bCharacterMovementEnabled)
 	{
-		if (value != 0)
-		{
-			if (ParentStance == EParentStance::Eps_Standing)
-			{
-				if (StanceStatus == EStanceStatus::Ess_StandIdleJumping ||
-					StanceStatus == EStanceStatus::Ess_StandJogJumping ||
-					StanceStatus == EStanceStatus::Ess_StandSprintJumping)
-				{
-
-				}
-				else
-				{
-					SetStanceStatus(EStanceStatus::Ess_StandJogging);
-				}
-
-			}
-			else if (ParentStance == EParentStance::Eps_Crouching)
-			{
-				SetStanceStatus(EStanceStatus::Ess_CrouchWalking);
-			}
-
-			bIdleCheck = true;
-		}
-		AddMovementInput(GetActorRightVector()* value);
-	}
-	else
-	{
-		if(bIsBraced)
+		if (ParentStance != EParentStance::Eps_Parkouring)
 		{
 			if (value != 0)
 			{
-				BracedMove(value);
-			}
-			else
-			{
-				if(ParkourStatus != EParkourStatus::Eps_BracedClimbingOver)
+				if (ParentStance == EParentStance::Eps_Standing)
 				{
-					SetParkourStatus(EParkourStatus::Eps_BracedIdling);
+					if (StanceStatus == EStanceStatus::Ess_StandIdleJumping ||
+						StanceStatus == EStanceStatus::Ess_StandJogJumping ||
+						StanceStatus == EStanceStatus::Ess_StandSprintJumping)
+					{
+
+					}
+					else
+					{
+						SetStanceStatus(EStanceStatus::Ess_StandJogging);
+					}
+
 				}
+				else if (ParentStance == EParentStance::Eps_Crouching)
+				{
+					SetStanceStatus(EStanceStatus::Ess_CrouchWalking);
+				}
+
+				bIdleCheck = true;
+			}
+			AddMovementInput(GetActorRightVector()* value);
+		}
+		else
+		{
+			if (bIsBraced)
+			{
+				if (ParkourStatus != EParkourStatus::Eps_BracedJumpingLeft && ParkourStatus != EParkourStatus::Eps_BracedJumpingRight)
+				{
+					if (value != 0)
+					{
+						BracedMove(value);
+					}
+					else
+					{
+						if (ParkourStatus != EParkourStatus::Eps_BracedClimbingOver && ParkourStatus != EParkourStatus::Eps_BracedJumpingLeft && ParkourStatus != EParkourStatus::Eps_BracedJumpingRight)
+						{
+							SetParkourStatus(EParkourStatus::Eps_BracedIdling);
+						}
+					}
+				}
+
 			}
 		}
 	}
 }
 void AATHAscila::LookUp(float value)
 {
-	if (Pitch != MaxPitch && Pitch != MinPitch)
+	if (bCameraMovementEnabled)
 	{
-		AddControllerPitchInput(value);
-	}
-	else if (Pitch != MaxPitch)
-	{
-		if (value < 0)
+		if (Pitch != MaxPitch && Pitch != MinPitch)
 		{
 			AddControllerPitchInput(value);
 		}
-	}
-	else if (Pitch != MinPitch)
-	{
-		if (value > 0)
+		else if (Pitch != MaxPitch)
 		{
-			AddControllerPitchInput(value);
+			if (value < 0)
+			{
+				AddControllerPitchInput(value);
+			}
+		}
+		else if (Pitch != MinPitch)
+		{
+			if (value > 0)
+			{
+				AddControllerPitchInput(value);
+			}
 		}
 	}
+
 }
 void AATHAscila::LookRight(float value)
 {
-	AddControllerYawInput(value);
+	if (bCameraMovementEnabled)
+	{
+		AddControllerYawInput(value);
+	}
 }
 void AATHAscila::RequestSprint()
 {
@@ -975,7 +997,6 @@ void AATHAscila::SpawnBow()
 	#pragma endregion 
 
 	#pragma  region Utilities / Animation
-
 void AATHAscila::ChangeCameraProperties(float DistanceFromCamera, float CameraFOV, FVector CameraLocation, float TransitionSpeed)
 {
 	TargetSpringCompSocketOffset = CameraLocation;
@@ -1404,7 +1425,8 @@ void AATHAscila::RightJumpLedgeTracer()
 // Movement Events
 void AATHAscila::GrabLedge()
 {
-	if(ParkourStatus != EParkourStatus::Eps_BracedIdling && ParkourStatus != EParkourStatus::Eps_BracedClimbingOver)
+	if(ParkourStatus != EParkourStatus::Eps_BracedIdling && ParkourStatus != EParkourStatus::Eps_BracedClimbingOver 
+		&& ParkourStatus != EParkourStatus::Eps_BracedJumpingLeft && ParkourStatus != EParkourStatus::Eps_BracedJumpingRight)
 	{
 		EnterRMState();
 		
@@ -1414,17 +1436,18 @@ void AATHAscila::GrabLedge()
 
 		FVector WallNormalAdjusted = WallNormal * FVector(22.0f, 22.0f, 0);
 		
-		FVector TargetRelativeLocation2 = FVector(WallNormalAdjusted.X + WallTraceLocation.X, WallNormalAdjusted.Y + WallTraceLocation.Y,
-			WallHeightLocation.Z - ZHeightParkourTest);
+		FVector TargetRelativeLocation = FVector(WallNormalAdjusted.X + WallTraceLocation.X, WallNormalAdjusted.Y + WallTraceLocation.Y,
+			WallHeightLocation.Z - 87.5f);
 
-		FRotator TargetRelativeRotation = FRotator(WallNormal.ToOrientationRotator().Roll, WallNormal.ToOrientationRotator().Pitch,
-			WallNormal.ToOrientationRotator().Yaw);
-
+		FRotator TargetRelativeRotation = FRotator(UKismetMathLibrary::Conv_VectorToRotator(WallNormal).Pitch-5, UKismetMathLibrary::Conv_VectorToRotator(WallNormal).Yaw - 180,
+			UKismetMathLibrary::Conv_VectorToRotator(WallNormal).Roll);
+		
 		FLatentActionInfo info = FLatentActionInfo();
 		info.CallbackTarget = this;
 		
-		UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), TargetRelativeLocation2, GetActorRotation(), false, false, 0.13f, false, EMoveComponentAction::Move, info);
-		//CallSetMoveToParameters(TargetRelativeLocation2, GetActorRotation(), 0.001);
+		UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), TargetRelativeLocation, TargetRelativeRotation, false, false, 0.13f, false, EMoveComponentAction::Move, info);
+
+		UE_LOG(LogTemp, Error, TEXT("GRABBING"));
 
 		GetCharacterMovement()->StopMovementImmediately();
 	}
@@ -1483,11 +1506,11 @@ void AATHAscila::BracedMove(float inputValue)
 
 void AATHAscila::BracedJump(float inputValue)
 {
-	if(inputValue > 0)
+	if (inputValue > 0 && bCanBracedJumpRight)
 	{
 		SetParkourStatus(EParkourStatus::Eps_BracedJumpingRight);
 	}
-	else if(inputValue < 0)
+	else if (inputValue < 0 && bCanBracedJumpLeft)
 	{
 		SetParkourStatus(EParkourStatus::Eps_BracedJumpingLeft);
 	}

@@ -192,6 +192,8 @@ protected:
 	#pragma endregion 
 
 	// Input
+	bool bCameraMovementEnabled = true;
+	bool bCharacterMovementEnabled = true;
 	UPROPERTY(VisibleInstanceOnly, Category = "Movement")
 	float InputForward = 0.0f;
 	UPROPERTY(VisibleInstanceOnly, Category = "Movement")
@@ -341,7 +343,9 @@ protected:
 	bool bIsBraced = false;
 	bool bCanBracedMoveRight = false;
 	bool bCanBracedMoveLeft = false;
+	UPROPERTY(VisibleInstanceOnly)
 	bool bCanBracedJumpRight = false;
+	UPROPERTY(VisibleInstanceOnly)
 	bool bCanBracedJumpLeft = false;
 
 	// Capsule Sizes/Heights
@@ -357,7 +361,6 @@ protected:
 		// Height
 	UFUNCTION(BlueprintCallable)
 		void LedgeTraceHeight();
-	UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
 	FVector WallHeightLocation;
 		// Move Left Right
 	UFUNCTION(BlueprintCallable, Category = "Parkour")
@@ -371,7 +374,6 @@ protected:
 	void RightJumpLedgeTracer();
 	// Parkour Movement
 		// Braced
-	void GrabLedge();
 	void ExitBrace();
 	void BracedClimbLedge();
 	void BracedMove(float inputValue);
@@ -397,6 +399,10 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	//Override FaceRotation For Yaw Lerp
 	virtual void FaceRotation(FRotator NewControlRotation, float DeltaTime) override;
+
+	// Input
+	void SetCameraEnabled(bool shouldEnable);
+	void SetButtonEnabled(bool shouldEnable);
 	
 	// Landed
 	void SetNeedsToLandT();
@@ -428,6 +434,9 @@ public:
 	void SetPCRootMotionRotation(bool NeedsRootMotionRotation);
 
 	// Parkour
+		// Braced
+	void GrabLedge();
+		// General
 	UFUNCTION(BlueprintCallable, Category = "Parkour")
 	void EnterRMState();
 	UFUNCTION(BlueprintCallable, Category = "Parkour")
@@ -435,7 +444,6 @@ public:
 	//bool GetCanGrab();
 	UFUNCTION(BlueprintCallable, Category = "Parkour")
 	void CapsuleMeshPropertiesTimer();
-	UPROPERTY(EditInstanceOnly, Category = "Parkour")
-	float ZHeightParkourTest = 88.0f;
+
 
 };
