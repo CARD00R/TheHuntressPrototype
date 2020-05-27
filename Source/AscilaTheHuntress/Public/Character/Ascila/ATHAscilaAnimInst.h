@@ -102,10 +102,13 @@ protected:
 
 	#pragma endregion
 
+	
 
 	#pragma region Parkour
-
-	//bool bCanGrab = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Parkour Properties")
+	bool bCanBracedTurnLeft = false;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Parkour Properties")
+	bool bCanBracedTurnRight = false;
 
 	#pragma endregion  
 

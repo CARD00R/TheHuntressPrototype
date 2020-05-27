@@ -10,7 +10,7 @@
  * 
  */
 class AATHAscila;
-
+class AActor;
 UCLASS()
 class ASCILATHEHUNTRESS_API AATHAscilaPC : public APlayerController
 {
@@ -19,6 +19,7 @@ protected:
 
 	// When player is meant to be rotating through root motion
 	bool bisRootMotionRotating = false;
+	
 public:
 	
 	virtual void UpdateRotation(float DeltaTime) override;

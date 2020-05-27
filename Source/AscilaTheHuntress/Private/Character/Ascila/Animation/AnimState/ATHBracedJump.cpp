@@ -13,13 +13,7 @@ void UATHBracedJump::NotifyBegin(USkeletalMeshComponent * MeshComp, UAnimSequenc
 		AATHAscila* AscilaCharacter = Cast<AATHAscila>(MeshComp->GetOwner());
 		if (AscilaCharacter != nullptr)
 		{
-			APlayerController* AscilaPC = MeshComp->GetWorld()->GetFirstPlayerController();
-
-			if (AscilaPC != nullptr)
-			{
-				AscilaCharacter->GetController()->GetPawn()->DisableInput(AscilaPC);
-				AscilaCharacter->SetButtonEnabled(false);
-			}
+			AscilaCharacter->SetButtonEnabled(false);
 		}
 	}
 }
@@ -31,16 +25,10 @@ void UATHBracedJump::NotifyEnd(USkeletalMeshComponent * MeshComp, UAnimSequenceB
 		AATHAscila* AscilaCharacter = Cast<AATHAscila>(MeshComp->GetOwner());
 		if (AscilaCharacter != nullptr)
 		{
-			APlayerController* AscilaPC = MeshComp->GetWorld()->GetFirstPlayerController();
-
-			if (AscilaPC != nullptr)
-			{
-				AscilaCharacter->GetController()->GetPawn()->EnableInput(AscilaPC);
-			}
 			AscilaCharacter->SetButtonEnabled(true);
+			AscilaCharacter->SetParkourStatus(EParkourStatus::Eps_NA);
 			AscilaCharacter->GrabLedge();
-			AscilaCharacter->SetParkourStatus(EParkourStatus::Eps_BracedIdling);
-
+			APlayerController* AscilaPC = MeshComp->GetWorld()->GetFirstPlayerController();
 		}
 	}
 }
