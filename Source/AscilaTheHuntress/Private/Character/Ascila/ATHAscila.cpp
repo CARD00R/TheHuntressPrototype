@@ -75,7 +75,7 @@ AATHAscila::AATHAscila()
 void AATHAscila::BeginPlay()
 {
 	Super::BeginPlay();
-	SpawnBow();
+	//SpawnBow();
 }
 
 // Called every frame
@@ -225,11 +225,42 @@ void AATHAscila::MoveRight(float value)
 		{
 			if (bIsBraced)
 			{
+				bool RequestBracedTurnRight = false;
+				bool RequestBracedTurnLeft = false;
+
 				if (ParkourStatus != EParkourStatus::Eps_BracedJumpingLeft && ParkourStatus != EParkourStatus::Eps_BracedJumpingRight)
 				{
 					if (value != 0)
 					{
-						BracedMove(value);
+						if(value > 0)
+						{
+							if (bCanBracedTurnRight)
+							{
+								if(ParkourStatus != EParkourStatus::Eps_BracedJumpingRight && ParkourStatus != EParkourStatus::Eps_BracedTurningRight)
+								{
+									SetParkourStatus(EParkourStatus::Eps_BracedIdling);
+								}
+							}
+							else
+							{
+								BracedMove(value);
+							}
+						}
+						else
+						{
+							if (bCanBracedTurnLeft)
+							{
+								if (ParkourStatus != EParkourStatus::Eps_BracedJumpingLeft && ParkourStatus != EParkourStatus::Eps_BracedTurningLeft)
+								{
+									SetParkourStatus(EParkourStatus::Eps_BracedIdling);
+								}
+							}
+							else
+							{
+								BracedMove(value);
+							}
+						}
+						
 					}
 					else
 					{
@@ -239,7 +270,7 @@ void AATHAscila::MoveRight(float value)
 							&& ParkourStatus != EParkourStatus::Eps_BracedJumpingUp && ParkourStatus != EParkourStatus::Eps_BracedJumpingDown)
 						{
 							SetParkourStatus(EParkourStatus::Eps_BracedIdling);
-						}
+						}					
 					}
 				}
 
@@ -489,9 +520,7 @@ void AATHAscila::MovementAction()
 void AATHAscila::RequestJump()
 {
 	float CalculatedPressTime = GetWorld()->GetTimeSeconds() - StoredTime;
-	bWantsToParkour = true;
 	
-	UE_LOG(LogTemp, Error, TEXT("%f"), CalculatedPressTime);
 	if(!HasRequestedMovementAction)
 	{
 		if (ParentStance != EParentStance::Eps_Dead)
@@ -499,7 +528,7 @@ void AATHAscila::RequestJump()
 			if (ParentStance == EParentStance::Eps_Parkouring)
 			{
 				// Holding down Jump
-				if (CalculatedPressTime > 0.2)
+				if (CalculatedPressTime > 0.19)
 				{
 					if (InputForward > 0)
 					{
@@ -520,7 +549,6 @@ void AATHAscila::RequestJump()
 					{
 						BracedSideJump(InputRight);
 					}
-
 				}
 				// Not holding down Jump
 				else
@@ -1638,9 +1666,7 @@ void AATHAscila::CalculateLedgeLocationRotation()
 	UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), TargetRelativeLocation, TargetRelativeRotation, false, false, 0.13f, false, EMoveComponentAction::Move, info);
 
 	GetCharacterMovement()->StopMovementImmediately();
-	UE_LOG(LogTemp, Error, TEXT("MOVING TOOO"));
 }
-
 
 void AATHAscila::LedgeCalculation()
 {
@@ -1662,7 +1688,6 @@ void AATHAscila::LedgeCalculation()
 			UKismetSystemLibrary::MoveComponentTo(GetCapsuleComponent(), TargetRelativeLocation, TargetRelativeRotation, false, false, 0.13f, false, EMoveComponentAction::Move, info);
 
 			GetCharacterMovement()->StopMovementImmediately();
-			UE_LOG(LogTemp, Error, TEXT("%f"), GrabLedgeCounter);
 			GrabLedgeCounter++;
 		}
 		else
@@ -1762,7 +1787,6 @@ void AATHAscila::BracedVerticalJump(float inputValue)
 
 void AATHAscila::BracedTurnCorner(float inputValue)
 {
-
 	if (inputValue > 0 && bCanBracedTurnRight)
 	{
 		SetParkourStatus(EParkourStatus::Eps_BracedTurningRight);
