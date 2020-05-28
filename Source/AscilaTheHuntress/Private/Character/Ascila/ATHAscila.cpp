@@ -1363,6 +1363,28 @@ void AATHAscila::CapsuleMeshPropertiesTimer()
 
 	#pragma region Parkour
 
+void AATHAscila::CallTogleForwardHeightTracer()
+{
+	GetWorldTimerManager().SetTimer(ToggleTracerHandle, this, &AATHAscila::ToggleForwardHeightTracer, 0.01, true);
+}
+
+void AATHAscila::ToggleForwardHeightTracer()
+{
+	if(DropCounter < 10)
+	{
+		bShouldParkourTrace = false;
+		DropCounter++;
+		UE_LOG(LogTemp, Error, TEXT("%f"), DropCounter);
+	}
+	else
+	{
+		bShouldParkourTrace = !bShouldParkourTrace;
+		SetParkourStatus(EParkourStatus::Eps_NA);
+		DropCounter = 0;
+		GetWorldTimerManager().ClearTimer(ToggleTracerHandle);
+	}
+}
+
 // Traces
 void AATHAscila::LedgeTraceForward()
 {
@@ -1376,17 +1398,24 @@ void AATHAscila::LedgeTraceForward()
 	if(UKismetSystemLibrary::SphereTraceSingle(GetWorld(), StartLocation, EndLocation,20,COLLISION_LEDGE, false, MakeArray,
 		EDrawDebugTrace::ForOneFrame,Hit,true, FLinearColor::Red, FLinearColor::Green,0))
 	{
-		WallTraceLocation = Hit.Location;
-		WallNormal = Hit.Normal;
-		LedgeTraceHeight();
+		if(bShouldParkourTrace)
+		{
+			WallTraceLocation = Hit.Location;
+			WallNormal = Hit.Normal;
+			LedgeTraceHeight();
+		}
 	}
 }
-
 void AATHAscila::LedgeTraceHeight()
 {
+
 	// Tracer starts from the top and traces down!
 	//Trace Params
-	float TraceHeight = 500.0f;
+	float TraceHeight = 200.0f;
+	if(ParentStance == EParentStance::Eps_Parkouring)
+	{
+		TraceHeight = 100.0f;
+	}
 	float ForwardDistance = 70.0f;
 	//FVector StartLocation = FVector(WallTraceLocation.X, WallTraceLocation.Y, WallTraceLocation.Z + TraceHeight);
 	FVector StartLocation = FVector(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z + TraceHeight);
@@ -1400,20 +1429,20 @@ void AATHAscila::LedgeTraceHeight()
 		EDrawDebugTrace::ForOneFrame, Hit, true, FLinearColor::Red, FLinearColor::Green, 0))
 	{
 		WallHeightLocation = Hit.Location;
-
+		
 		// This checks to see if the character Pelvis Location.Z is a certain height below the Ledge Location.Z
-		float PelvisToLedgeHeightDifferenceLimit = -100.f;
-		float PelvisZLocation = UKismetMathLibrary::Abs(GetMesh()->GetSocketLocation(PelvisSocketName).Z);
-		float WallHeightZLocation = UKismetMathLibrary::Abs(WallHeightLocation.Z);			
+		float PelvisToLedgeHeightDifferenceLimit = 110.f;
+		float PelvisZLocation = GetMesh()->GetSocketLocation(PelvisSocketName).Z;
+		float WallHeightZLocation = WallHeightLocation.Z;
 		float PelvisToLedgeHeightDifference = WallHeightZLocation - PelvisZLocation;
 
+		bool bIsPelvisCloseEnoughToLedge = UKismetMathLibrary::InRange_FloatFloat(PelvisToLedgeHeightDifference, 0,
+			PelvisToLedgeHeightDifferenceLimit, true, true);
 
-		bool bIsPelvisCloseEnoughToLedge = UKismetMathLibrary::InRange_FloatFloat(PelvisToLedgeHeightDifference,PelvisToLedgeHeightDifferenceLimit,
-			0, true,true);
+		//UE_LOG(LogTemp, Error, TEXT("%f"), FVector::Dist(StartLocation, Hit.Location));
+		//UE_LOG(LogTemp, Error, TEXT("%f"), FVector::Dist(EndLocation, Hit.Location));
 		
-		//UE_LOG(LogTemp, Error, TEXT("%f"), PelvisToLedgeHeightDifference);
-		
-		if(bIsPelvisCloseEnoughToLedge)
+		if(bIsPelvisCloseEnoughToLedge && bShouldParkourTrace)
 		{
 			GrabLedge();
 		}
@@ -1423,7 +1452,6 @@ void AATHAscila::LedgeTraceHeight()
 
 	}
 }
-
 void AATHAscila::LeftMoveLedgeTracer()
 {
 	if(ParkourStatus == EParkourStatus::Eps_BracedIdling || ParkourStatus == EParkourStatus::Eps_BracedMovingLeft 
@@ -1450,7 +1478,6 @@ void AATHAscila::LeftMoveLedgeTracer()
 		}
 	}
 }
-
 void AATHAscila::RightMoveLedgeTracer()
 {
 	if (ParkourStatus == EParkourStatus::Eps_BracedIdling || ParkourStatus == EParkourStatus::Eps_BracedMovingRight 
@@ -1477,7 +1504,6 @@ void AATHAscila::RightMoveLedgeTracer()
 		}
 	}
 }
-
 void AATHAscila::LeftJumpLedgeTracer()
 {
 	if (ParkourStatus == EParkourStatus::Eps_BracedIdling || ParkourStatus == EParkourStatus::Eps_BracedMovingRight || ParkourStatus == EParkourStatus::Eps_BracedMovingLeft)
@@ -1506,7 +1532,6 @@ void AATHAscila::LeftJumpLedgeTracer()
 		}
 	}
 }
-
 void AATHAscila::RightJumpLedgeTracer()
 {
 	if (ParkourStatus == EParkourStatus::Eps_BracedIdling || ParkourStatus == EParkourStatus::Eps_BracedMovingRight || ParkourStatus == EParkourStatus::Eps_BracedMovingLeft)
@@ -1535,7 +1560,6 @@ void AATHAscila::RightJumpLedgeTracer()
 		}
 	}
 }
-
 void AATHAscila::UpJumpLedgeTracer()
 {
 
@@ -1555,7 +1579,6 @@ void AATHAscila::UpJumpLedgeTracer()
 		bCanBracedJumpUp = false;
 	}
 }
-
 void AATHAscila::LeftCornerTracer()
 {
 	// Tracer starts from the top and traces down!
@@ -1565,7 +1588,7 @@ void AATHAscila::LeftCornerTracer()
 	
 	FVector StartLocation = FVector (ArrowMoveLeftComp->GetComponentLocation().X, ArrowMoveLeftComp->GetComponentLocation().Y, 
 		ArrowMoveLeftComp->GetComponentLocation().Z + ZAdjust);
-	FVector StartLocationAdjusted = FVector(StartLocation.X + 10.0f, StartLocation.Y, StartLocation.Z);
+	FVector StartLocationAdjusted = FVector(StartLocation.X, StartLocation.Y, StartLocation.Z);
 	FVector EndLocation = StartLocation + (ArrowMoveLeftComp->GetForwardVector()*ForwardAdjust);
 	FVector EndLocationAdjusted = FVector(EndLocation.X, EndLocation.Y, EndLocation.Z);
 	TArray<AActor*> MakeArray;
@@ -1593,7 +1616,6 @@ void AATHAscila::LeftCornerTracer()
 
 	}
 }
-
 void AATHAscila::RightCornerTracer()
 {
 	// Tracer starts from the top and traces down!
@@ -1603,7 +1625,7 @@ void AATHAscila::RightCornerTracer()
 
 	FVector StartLocation = FVector(ArrowMoveRightComp->GetComponentLocation().X, ArrowMoveRightComp->GetComponentLocation().Y,
 		ArrowMoveRightComp->GetComponentLocation().Z + ZAdjust);
-	FVector StartLocationAdjusted = FVector(StartLocation.X - 10.0f, StartLocation.Y, StartLocation.Z);
+	FVector StartLocationAdjusted = FVector(StartLocation.X, StartLocation.Y, StartLocation.Z);
 	FVector EndLocation = StartLocation + (ArrowMoveRightComp->GetForwardVector()*ForwardAdjust);
 	FVector EndLocationAdjusted = FVector(EndLocation.X, EndLocation.Y, EndLocation.Z);
 	TArray<AActor*> MakeArray;
@@ -1640,16 +1662,15 @@ void AATHAscila::GrabLedge()
 		
 		SetParentStanceStatus(EParentStance::Eps_Parkouring);
 		SetParkourStatus(EParkourStatus::Eps_BracedIdling);
-		
 		bIsBraced = true;
 		CalculateLedgeLocationRotation();
+		//UE_LOG(LogTemp, Error, TEXT("GRABBBBBED"));
 	}
 	else
 	{
 		
 	}
 }
-
 void AATHAscila::CalculateLedgeLocationRotation()
 {
 	FVector WallNormalAdjusted = WallNormal * FVector(22.0f, 22.0f, 0);
@@ -1667,7 +1688,6 @@ void AATHAscila::CalculateLedgeLocationRotation()
 
 	GetCharacterMovement()->StopMovementImmediately();
 }
-
 void AATHAscila::LedgeCalculation()
 {
 	if(ParkourStatus == EParkourStatus::Eps_BracedIdling)
@@ -1689,21 +1709,21 @@ void AATHAscila::LedgeCalculation()
 
 			GetCharacterMovement()->StopMovementImmediately();
 			GrabLedgeCounter++;
+			//UE_LOG(LogTemp, Error, TEXT("FIX MEEEEEEEE"));
 		}
 		else
 		{
 			GrabLedgeCounter = 0;
 			GetWorldTimerManager().ClearTimer(LedgeCalculationTimer);
 		}
-
 	}
 	else
 	{
 		GrabLedgeCounter = 0;
 		GetWorldTimerManager().ClearTimer(LedgeCalculationTimer);
+		//UE_LOG(LogTemp, Error, TEXT("BRACE IDLINGGGGG"));
 	}
 }
-
 void AATHAscila::CallLedgeCalculationTimer()
 {
 	GetWorldTimerManager().SetTimer(LedgeCalculationTimer, this, &AATHAscila::LedgeCalculation, 0.004, true);
@@ -1712,13 +1732,9 @@ void AATHAscila::ExitBrace()
 {
 	if(ParkourStatus != EParkourStatus::Eps_BracedClimbingOver)
 	{
-		ExitRMState();
-		bWantsToParkour = false;
-		SetParentStanceStatus(EParentStance::Eps_InAir);
-		SetParkourStatus(EParkourStatus::Eps_NA);
+		SetParkourStatus(EParkourStatus::Eps_BracedJumpingDown);
 	}
 }
-
 void AATHAscila::BracedClimbLedge()
 {
 	if(ParkourStatus != EParkourStatus::Eps_BracedClimbingOver)
@@ -1727,7 +1743,6 @@ void AATHAscila::BracedClimbLedge()
 		SetParkourStatus(EParkourStatus::Eps_BracedClimbingOver);
 	}
 }
-
 void AATHAscila::BracedMove(float inputValue)
 {
 	if(inputValue != 0)
@@ -1760,7 +1775,6 @@ void AATHAscila::BracedMove(float inputValue)
 		//CalculateLedgeZHeightAdjust();
 	}
 }
-
 void AATHAscila::BracedSideJump(float inputValue)
 {
 	if (inputValue > 0 && bCanBracedJumpRight)
@@ -1772,19 +1786,17 @@ void AATHAscila::BracedSideJump(float inputValue)
 		SetParkourStatus(EParkourStatus::Eps_BracedJumpingLeft);
 	}
 }
-
 void AATHAscila::BracedVerticalJump(float inputValue)
 {
 	if (inputValue > 0 && bCanBracedJumpUp)
 	{
 		SetParkourStatus(EParkourStatus::Eps_BracedJumpingUp);
 	}
-	else if (inputValue < 0 && bCanBracedJumpDown)
+	/*else if (inputValue < 0 && bCanBracedJumpDown)
 	{
 		SetParkourStatus(EParkourStatus::Eps_BracedJumpingDown);
-	}
+	}*/
 }
-
 void AATHAscila::BracedTurnCorner(float inputValue)
 {
 	if (inputValue > 0 && bCanBracedTurnRight)
@@ -1814,6 +1826,11 @@ void AATHAscila::ExitRMState()
 		SetParkourStatus(EParkourStatus::Eps_NA);
 		SetStanceStatus(EStanceStatus::Ess_StandJogging);
 	}
+	else
+	{
+		SetParentStanceStatus(EParentStance::Eps_InAir);
+	}
+	
 	GetWorldTimerManager().SetTimer(CapsuleMeshProprtiesChangeTimer, this, &AATHAscila::CapsuleMeshPropertiesChange, 0.0035, true);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);

@@ -355,20 +355,19 @@ protected:
 	
 		//Braced
 	//bool bCanGrab = false;
-	UPROPERTY(BlueprintReadOnly, Category = "Parkour")
-	bool bWantsToParkour = false;
+
 	bool bIsBraced = false;
-	UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
+	//UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
 	bool bCanBracedMoveRight = false;
-	UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
+	//UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
 	bool bCanBracedMoveLeft = false;
-	UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
+	//UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
 	bool bCanBracedJumpLeft = false;
-	UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
+	//UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
 	bool bCanBracedJumpRight = false;
-	UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
+	//UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
 	bool bCanBracedTurnLeft = false;
-	UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
+	//UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
 	bool bCanBracedTurnRight = false;
 	UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
 	bool bCanBracedJumpUp = false;
@@ -380,6 +379,12 @@ protected:
 	float BracedCapsuleHalfHeight = 50;
 	FVector BracedInitialiseMeshLocation = FVector(-9.0f,-4.5f,-141.0f);
 	//Traces
+		// Toggle
+	void ToggleForwardHeightTracer();
+	UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
+	bool bShouldParkourTrace = true;
+	float DropCounter = 0;
+	FTimerHandle ToggleTracerHandle;
 		// Forward
 	UFUNCTION(BlueprintCallable)
 		void LedgeTraceForward();
@@ -389,6 +394,7 @@ protected:
 	UFUNCTION(BlueprintCallable)
 		void LedgeTraceHeight();
 	FVector WallHeightLocation;
+	float WallHeightStoredZ;
 		// Move Left Right
 	UFUNCTION(BlueprintCallable, Category = "Parkour")
 	void LeftMoveLedgeTracer();
@@ -472,6 +478,9 @@ public:
 
 	// Parkour
 		// Braced
+		//	Toggle
+	void CallTogleForwardHeightTracer();
+	
 	UFUNCTION(BlueprintCallable, Category = "Parkour")
 	void GrabLedge();
 	float GrabLedgeCounter = 0;
@@ -487,8 +496,7 @@ public:
 	void ExitRMState();
 	// Getters
 	bool GetBracedTurn(bool getLeft);
-
-
+	
 	UFUNCTION(BlueprintCallable, Category = "Parkour")
 	void CapsuleMeshPropertiesTimer();
 
