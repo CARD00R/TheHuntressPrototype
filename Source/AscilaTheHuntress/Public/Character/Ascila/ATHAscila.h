@@ -395,6 +395,9 @@ protected:
 		void LedgeTraceHeight();
 	FVector WallHeightLocation;
 	float WallHeightStoredZ;
+		// Ground
+	void GroundTracer();
+	float ToGroundDistance;
 		// Move Left Right
 	UFUNCTION(BlueprintCallable, Category = "Parkour")
 	void LeftMoveLedgeTracer();

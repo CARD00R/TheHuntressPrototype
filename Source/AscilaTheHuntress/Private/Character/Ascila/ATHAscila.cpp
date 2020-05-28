@@ -18,7 +18,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Weapon/BowAndArrow/ATHBow.h"
-
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 AATHAscila::AATHAscila()
@@ -312,32 +312,35 @@ void AATHAscila::LookRight(float value)
 }
 void AATHAscila::RequestSprint()
 {
-	if (ParentStance != EParentStance::Eps_Dead)
+	if (bCharacterMovementEnabled)
 	{
-		if(ParentStance != EParentStance::Eps_InAir)
+		if (ParentStance != EParentStance::Eps_Dead)
 		{
-			if (StanceStatus != EStanceStatus::Ess_StandSprinting || StanceStatus != EStanceStatus::Ess_CrouchSprinting)
+			if (ParentStance != EParentStance::Eps_InAir)
 			{
-				if (StanceStatus != EStanceStatus::Ess_StandIdling || StanceStatus != EStanceStatus::Ess_CrouchIdling)
+				if (StanceStatus != EStanceStatus::Ess_StandSprinting || StanceStatus != EStanceStatus::Ess_CrouchSprinting)
 				{
-					if (ParentStance != EParentStance::Eps_Rolling)
+					if (StanceStatus != EStanceStatus::Ess_StandIdling || StanceStatus != EStanceStatus::Ess_CrouchIdling)
 					{
-						if (InputForward > 0 && InputRight == 0)
+						if (ParentStance != EParentStance::Eps_Rolling)
 						{
-							Sprint();
-						}
-					}
-					else
-					{
-						if (ParentStance == EParentStance::Eps_Standing)
-						{
-							SetRequestedStatus(ERequestStance::Ers_StandSprinting);
+							if (InputForward > 0 && InputRight == 0)
+							{
+								Sprint();
+							}
 						}
 						else
 						{
-							SetRequestedStatus(ERequestStance::Ers_CrouchSprinting);
-						}
+							if (ParentStance == EParentStance::Eps_Standing)
+							{
+								SetRequestedStatus(ERequestStance::Ers_StandSprinting);
+							}
+							else
+							{
+								SetRequestedStatus(ERequestStance::Ers_CrouchSprinting);
+							}
 
+						}
 					}
 				}
 			}
@@ -392,18 +395,50 @@ void AATHAscila::SprintReleased()
 }
 void AATHAscila::RequestCrouchChange()
 {
-	// If crouching
-	if(ParentStance == EParentStance::Eps_Crouching)
+	if (bCharacterMovementEnabled)
 	{
-		if (ParentStance != EParentStance::Eps_Dead)
+		// If crouching
+		if (ParentStance == EParentStance::Eps_Crouching)
 		{
-			if (ParentStance != EParentStance::Eps_InAir)
+			if (ParentStance != EParentStance::Eps_Dead)
+			{
+				if (ParentStance != EParentStance::Eps_InAir)
+				{
+					if (ParentStance != EParentStance::Eps_Rolling)
+					{
+						if (DistanceToObjectAbove() > 169.0f)
+						{
+							AscilaUnCrouch();
+						}
+					}
+					else
+					{
+						if (InputRight != 0 || InputForward != 0)
+						{
+							SetRequestedStatus(ERequestStance::Ers_CrouchWalking);
+						}
+						else
+						{
+							SetRequestedStatus(ERequestStance::Ers_CrouchIdling);
+						}
+					}
+				}
+			}
+		}
+		// If not crouching
+		else
+		{
+			if (ParentStance != EParentStance::Eps_Dead)
 			{
 				if (ParentStance != EParentStance::Eps_Rolling)
 				{
-					if (DistanceToObjectAbove() > 169.0f)
+					if (ParentStance != EParentStance::Eps_Parkouring)
 					{
-						AscilaUnCrouch();
+						AscilaCrouch();
+					}
+					else
+					{
+						ExitBrace();
 					}
 				}
 				else
@@ -416,41 +451,11 @@ void AATHAscila::RequestCrouchChange()
 					{
 						SetRequestedStatus(ERequestStance::Ers_CrouchIdling);
 					}
-				}
-			}
-		}
-	}
-	// If not crouching
-	else
-	{
-		if (ParentStance != EParentStance::Eps_Dead)
-		{
-			if (ParentStance != EParentStance::Eps_Rolling)
-			{
-				if (ParentStance != EParentStance::Eps_Parkouring)
-				{
-					AscilaCrouch();
-				}
-				else
-				{
-					ExitBrace();
-				}
-			}
-			else
-			{
-				if (InputRight != 0 || InputForward != 0)
-				{
-					SetRequestedStatus(ERequestStance::Ers_CrouchWalking);
-				}
-				else
-				{
-					SetRequestedStatus(ERequestStance::Ers_CrouchIdling);
-				}
 
+				}
 			}
 		}
 	}
-	
 }
 void AATHAscila::AscilaCrouch()
 {
@@ -504,107 +509,114 @@ void AATHAscila::AscilaUnCrouch()
 }
 void AATHAscila::MovementAction()
 {
-	HasRequestedMovementAction = false;
-	
-	if(ParentStance == EParentStance::Eps_Parkouring)
+	if (bCharacterMovementEnabled)
 	{
-		StoreTime();
-		GetWorldTimerManager().SetTimer(MovementActionHandle, this, &AATHAscila::RequestJump, 0.2, false);
-	}
-	else
-	{
-		RequestJump();
-	}
+		HasRequestedMovementAction = false;
 
+		if (ParentStance == EParentStance::Eps_Parkouring)
+		{
+			StoreTime();
+			GetWorldTimerManager().SetTimer(MovementActionHandle, this, &AATHAscila::RequestJump, 0.2, false);
+		}
+		else
+		{
+			RequestJump();
+		}
+
+	}
 }
 void AATHAscila::RequestJump()
 {
-	float CalculatedPressTime = GetWorld()->GetTimeSeconds() - StoredTime;
-	
-	if(!HasRequestedMovementAction)
+	if (bCharacterMovementEnabled)
 	{
-		if (ParentStance != EParentStance::Eps_Dead)
-		{
-			if (ParentStance == EParentStance::Eps_Parkouring)
-			{
-				// Holding down Jump
-				if (CalculatedPressTime > 0.19)
-				{
-					if (InputForward > 0)
-					{
-						if(!bCanBracedJumpUp)
-						{
-							BracedClimbLedge();
-						}
-						else
-						{
-							BracedVerticalJump(InputForward);
-						}
-					}
-					if (InputForward < 0)
-					{
-						// Jump Backwards
-					}
-					if (InputRight != 0)
-					{
-						BracedSideJump(InputRight);
-					}
-				}
-				// Not holding down Jump
-				else
-				{
-					if (InputForward > 0)
-					{
-						if (!bCanBracedJumpUp)
-						{
-							BracedClimbLedge();
-						}
-						else
-						{
-							BracedVerticalJump(InputForward);
-						}
-					}
-					if (InputForward < 0)
-					{
-						// Jump Backwards
-					}
-					if (InputRight != 0)
-					{
-						BracedTurnCorner(InputRight);
-					}
-				}
+		float CalculatedPressTime = GetWorld()->GetTimeSeconds() - StoredTime;
 
-				if (GetWorldTimerManager().IsTimerActive(MovementActionHandle))
-				{
-					GetWorldTimerManager().ClearTimer(MovementActionHandle);
-				}
-			}
-			else if (ParentStance != EParentStance::Eps_InAir)
+		if (!HasRequestedMovementAction)
+		{
+			if (ParentStance != EParentStance::Eps_Dead)
 			{
-				if (StanceStatus != EStanceStatus::Ess_StandIdleJumping && StanceStatus != EStanceStatus::Ess_StandJogJumping &&
-					StanceStatus != EStanceStatus::Ess_StandSprintJumping)
+				if (ParentStance == EParentStance::Eps_Parkouring)
 				{
-					if (ParentStance != EParentStance::Eps_Rolling)
+					// Holding down Jump
+					if (CalculatedPressTime > 0.19)
 					{
-						AscilaJump();
+						if (InputForward > 0)
+						{
+							if (!bCanBracedJumpUp)
+							{
+								BracedClimbLedge();
+							}
+							else
+							{
+								BracedVerticalJump(InputForward);
+							}
+						}
+						if (InputForward < 0)
+						{
+							// Jump Backwards
+						}
+						if (InputRight != 0)
+						{
+							BracedSideJump(InputRight);
+						}
 					}
+					// Not holding down Jump
 					else
 					{
-						//SetRequestedStatus(ERequestStance::Ers_StandJumping);
+						if (InputForward > 0)
+						{
+							if (!bCanBracedJumpUp)
+							{
+								BracedClimbLedge();
+							}
+							else
+							{
+								BracedVerticalJump(InputForward);
+							}
+						}
+						if (InputForward < 0)
+						{
+							// Jump Backwards
+						}
+						if (InputRight != 0)
+						{
+							BracedTurnCorner(InputRight);
+						}
+					}
+
+					if (GetWorldTimerManager().IsTimerActive(MovementActionHandle))
+					{
+						GetWorldTimerManager().ClearTimer(MovementActionHandle);
 					}
 				}
+				else if (ParentStance != EParentStance::Eps_InAir)
+				{
+					if (StanceStatus != EStanceStatus::Ess_StandIdleJumping && StanceStatus != EStanceStatus::Ess_StandJogJumping &&
+						StanceStatus != EStanceStatus::Ess_StandSprintJumping)
+					{
+						if (ParentStance != EParentStance::Eps_Rolling)
+						{
+							AscilaJump();
+						}
+						else
+						{
+							//SetRequestedStatus(ERequestStance::Ers_StandJumping);
+						}
+					}
+				}
+				else if (ParentStance == EParentStance::Eps_InAir && JumpWindowOpen)
+				{
+					AscilaJump();
+				}
 			}
-			else if (ParentStance == EParentStance::Eps_InAir && JumpWindowOpen)
-			{
-				AscilaJump();
-			}
+			HasRequestedMovementAction = true;
 		}
-		HasRequestedMovementAction = true;
-	}
-	else
-	{
+		else
+		{
 
+		}
 	}
+	
 }
 void AATHAscila::StoreTime()
 {
@@ -915,37 +927,43 @@ bool AATHAscila::GetIsAiming()
 }
 void AATHAscila::RequestAim()
 {
-	// also add jumping restriction and swimming
-	if (ParentStance != EParentStance::Eps_Dead)
+	if (bCharacterMovementEnabled)
 	{
-		if (ParentStance != EParentStance::Eps_Rolling)
+		// also add jumping restriction and swimming
+		if (ParentStance != EParentStance::Eps_Dead)
 		{
-			if(ParentStance == EParentStance::Eps_Standing)
+			if (ParentStance != EParentStance::Eps_Rolling)
 			{
-				if(StanceStatus == EStanceStatus::Ess_StandSprinting)
+				if (ParentStance == EParentStance::Eps_Standing)
 				{
-					SetStanceStatus(EStanceStatus::Ess_StandWalking);
+					if (StanceStatus == EStanceStatus::Ess_StandSprinting)
+					{
+						SetStanceStatus(EStanceStatus::Ess_StandWalking);
+					}
 				}
+				else if (ParentStance == EParentStance::Eps_Crouching)
+				{
+					if (StanceStatus == EStanceStatus::Ess_CrouchSprinting)
+					{
+						SetStanceStatus(EStanceStatus::Ess_CrouchWalking);
+					}
+				}
+
+				AimIn();
 			}
-			else if (ParentStance == EParentStance::Eps_Crouching)
+			else
 			{
-				if (StanceStatus == EStanceStatus::Ess_CrouchSprinting)
-				{
-					SetStanceStatus(EStanceStatus::Ess_CrouchWalking);
-				}
+				//SetRequestedStatus(ERequeststance)
 			}
-			
-			AimIn();
-		}
-		else
-		{
-			//SetRequestedStatus(ERequeststance)
 		}
 	}
 }
 void AATHAscila::RequestUnAim()
 {
-	AimOut();
+	if (bCharacterMovementEnabled)
+	{
+		AimOut();
+	}
 }
 void AATHAscila::AimIn()
 {
@@ -1008,22 +1026,25 @@ void AATHAscila::SetAimReadyValue()
 }
 void AATHAscila::RequestDrawChange()
 {
-	// Shooting arrows makes you lose Health ? as a way to balance out otherwise you just continously shoot arrows ezpz?
-	if (ParentStance != EParentStance::Eps_Dead)
+	if (bCharacterMovementEnabled)
 	{
-		if (ParentStance != EParentStance::Eps_Rolling)
+		// Shooting arrows makes you lose Health ? as a way to balance out otherwise you just continously shoot arrows ezpz?
+		if (ParentStance != EParentStance::Eps_Dead)
 		{
-			if(bIsAiming)
+			if (ParentStance != EParentStance::Eps_Rolling)
 			{
-				if(BowStatus == EBowStatus::Ebs_AimingReady)
+				if (bIsAiming)
 				{
-					DrawBow();
+					if (BowStatus == EBowStatus::Ebs_AimingReady)
+					{
+						DrawBow();
+					}
 				}
 			}
-		}
-		else
-		{
-			
+			else
+			{
+
+			}
 		}
 	}
 }
@@ -1054,21 +1075,24 @@ void AATHAscila::SetArrowDrawnVariable(bool isArrowDrawn)
 }
 void AATHAscila::RequestFire()
 {
-	if (ParentStance != EParentStance::Eps_Dead)
+	if (bCharacterMovementEnabled)
 	{
-		if (ParentStance != EParentStance::Eps_Rolling)
+		if (ParentStance != EParentStance::Eps_Dead)
 		{
-			if (bIsAiming)
+			if (ParentStance != EParentStance::Eps_Rolling)
 			{
-				if (BowStatus == EBowStatus::Ebs_PoweringShot)
+				if (bIsAiming)
 				{
-					Fire();
+					if (BowStatus == EBowStatus::Ebs_PoweringShot)
+					{
+						Fire();
+					}
 				}
 			}
-		}
-		else
-		{
+			else
+			{
 
+			}
 		}
 	}
 }
@@ -1374,7 +1398,7 @@ void AATHAscila::ToggleForwardHeightTracer()
 	{
 		bShouldParkourTrace = false;
 		DropCounter++;
-		UE_LOG(LogTemp, Error, TEXT("%f"), DropCounter);
+		//UE_LOG(LogTemp, Error, TEXT("%f"), DropCounter);
 	}
 	else
 	{
@@ -1411,10 +1435,13 @@ void AATHAscila::LedgeTraceHeight()
 
 	// Tracer starts from the top and traces down!
 	//Trace Params
-	float TraceHeight = 200.0f;
+	float TraceHeight = 300.0f - ToGroundDistance;
 	if(ParentStance == EParentStance::Eps_Parkouring)
 	{
-		TraceHeight = 100.0f;
+		if(ToGroundDistance < 98)
+		{
+			TraceHeight = 80.0f - ToGroundDistance;
+		}
 	}
 	float ForwardDistance = 70.0f;
 	//FVector StartLocation = FVector(WallTraceLocation.X, WallTraceLocation.Y, WallTraceLocation.Z + TraceHeight);
@@ -1429,9 +1456,9 @@ void AATHAscila::LedgeTraceHeight()
 		EDrawDebugTrace::ForOneFrame, Hit, true, FLinearColor::Red, FLinearColor::Green, 0))
 	{
 		WallHeightLocation = Hit.Location;
-		
-		// This checks to see if the character Pelvis Location.Z is a certain height below the Ledge Location.Z
-		float PelvisToLedgeHeightDifferenceLimit = 110.f;
+		//UE_LOG(LogTemp, Error, TEXT("%f"), FVector::Dist(StartLocation, Hit.Location))
+			// This checks to see if the character Pelvis Location.Z is a certain height below the Ledge Location.Z
+			float PelvisToLedgeHeightDifferenceLimit = 110.f;
 		float PelvisZLocation = GetMesh()->GetSocketLocation(PelvisSocketName).Z;
 		float WallHeightZLocation = WallHeightLocation.Z;
 		float PelvisToLedgeHeightDifference = WallHeightZLocation - PelvisZLocation;
@@ -1439,10 +1466,8 @@ void AATHAscila::LedgeTraceHeight()
 		bool bIsPelvisCloseEnoughToLedge = UKismetMathLibrary::InRange_FloatFloat(PelvisToLedgeHeightDifference, 0,
 			PelvisToLedgeHeightDifferenceLimit, true, true);
 
-		//UE_LOG(LogTemp, Error, TEXT("%f"), FVector::Dist(StartLocation, Hit.Location));
-		//UE_LOG(LogTemp, Error, TEXT("%f"), FVector::Dist(EndLocation, Hit.Location));
-		
-		if(bIsPelvisCloseEnoughToLedge && bShouldParkourTrace)
+
+		if (bIsPelvisCloseEnoughToLedge && bShouldParkourTrace)
 		{
 			GrabLedge();
 		}
@@ -1451,6 +1476,35 @@ void AATHAscila::LedgeTraceHeight()
 	{
 
 	}
+
+	GroundTracer();
+}
+void AATHAscila::GroundTracer()
+{
+	FVector StartLocation = FVector(0, 0, 0);
+	FVector EndLocation = FVector(0, 0, 0);
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+	QueryParams.bTraceComplex = true;
+
+	FHitResult Hit;
+	StartLocation = GetActorLocation();
+	EndLocation = FVector(StartLocation.X, StartLocation.Y, StartLocation.Z - 100000.0f);
+	if (GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, EndLocation, ECC_Visibility, QueryParams))
+	{
+		ToGroundDistance = Hit.Distance;
+		
+		//	FVector::Distance(StartLocation, Hit.ImpactPoint) = ToGroundDistance;
+
+		ToGroundDistance = FMath::Clamp(ToGroundDistance, 0.0f, 185.0f);
+
+	}
+	else
+	{
+		ToGroundDistance = 185.0f;
+	}
+	DrawDebugLine(GetWorld(), StartLocation, Hit.ImpactPoint, FColor::Magenta, false, 0.2, 0, 2);
+	//UE_LOG(LogTemp, Error, TEXT("%f"), ToGroundDistance);
 }
 void AATHAscila::LeftMoveLedgeTracer()
 {
@@ -1709,7 +1763,7 @@ void AATHAscila::LedgeCalculation()
 
 			GetCharacterMovement()->StopMovementImmediately();
 			GrabLedgeCounter++;
-			//UE_LOG(LogTemp, Error, TEXT("FIX MEEEEEEEE"));
+			UE_LOG(LogTemp, Error, TEXT("FIX MEEEEEEEE"));
 		}
 		else
 		{
