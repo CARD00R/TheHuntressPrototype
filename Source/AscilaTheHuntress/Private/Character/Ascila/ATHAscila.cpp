@@ -1389,16 +1389,22 @@ void AATHAscila::CapsuleMeshPropertiesTimer()
 
 void AATHAscila::CallTogleForwardHeightTracer()
 {
-	GetWorldTimerManager().SetTimer(ToggleTracerHandle, this, &AATHAscila::ToggleForwardHeightTracer, 0.01, true);
+	bShouldParkourTrace = false;
+	GetWorldTimerManager().SetTimer(ToggleTracerHandle, this, &AATHAscila::ToggleForwardHeightTracer, 0.33, true);
 }
 
 void AATHAscila::ToggleForwardHeightTracer()
 {
-	if(DropCounter < 10)
+
+	bShouldParkourTrace = !bShouldParkourTrace;
+	SetParkourStatus(EParkourStatus::Eps_NA);
+	DropCounter = 0;
+	GetWorldTimerManager().ClearTimer(ToggleTracerHandle);
+	/*if(DropCounter < 10)
 	{
 		bShouldParkourTrace = false;
 		DropCounter++;
-		//UE_LOG(LogTemp, Error, TEXT("%f"), DropCounter);
+		UE_LOG(LogTemp, Error, TEXT("%f"), DropCounter);
 	}
 	else
 	{
@@ -1406,7 +1412,7 @@ void AATHAscila::ToggleForwardHeightTracer()
 		SetParkourStatus(EParkourStatus::Eps_NA);
 		DropCounter = 0;
 		GetWorldTimerManager().ClearTimer(ToggleTracerHandle);
-	}
+	}*/
 }
 
 // Traces
@@ -1440,7 +1446,7 @@ void AATHAscila::LedgeTraceHeight()
 	{
 		if(ToGroundDistance < 98)
 		{
-			TraceHeight = 80.0f - ToGroundDistance;
+			TraceHeight = 30.0f - ToGroundDistance;
 		}
 	}
 	float ForwardDistance = 70.0f;
@@ -1763,7 +1769,7 @@ void AATHAscila::LedgeCalculation()
 
 			GetCharacterMovement()->StopMovementImmediately();
 			GrabLedgeCounter++;
-			UE_LOG(LogTemp, Error, TEXT("FIX MEEEEEEEE"));
+			//UE_LOG(LogTemp, Error, TEXT("FIX MEEEEEEEE"));
 		}
 		else
 		{
