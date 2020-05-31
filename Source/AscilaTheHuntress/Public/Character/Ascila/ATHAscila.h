@@ -309,16 +309,22 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Properties|Montages")
 	UAnimMontage* UnEquipBowMontage;
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Properties|Montages")
+	UAnimMontage* EquipBowMontage;
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon Properties|Montages")
 	UAnimMontage* DrawArrowMontage;
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon Properties|Montages")
 	UAnimMontage* FireArrowMontage;
+	bool bBowEquipped = false;
 
 	// Bow
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon Properties|Bow")
 		TSubclassOf<AATHBow> BowClass;
-
 	void SpawnBow();
-	FName BowSocketName = "Bow_Socket";
+	FName EquippedBowSocketName = "EquippedBow_Socket";
+	FName UnEquippedBowSocketName = "UnEquippedBow_Socket";
+	void EquipStateToggle();
+	void EquipBow();
+	void UnEquipBow();
 	#pragma endregion
 	
 	#pragma region Camera
@@ -468,7 +474,9 @@ public:
 	float GetPitch();
 	APlayerCameraManager* GetCameraManager();
 	AATHBow* EquippedBow;
-	
+	void SetEquipBowState(bool shouldEquipBow);
+	void SetAttachBow(bool EquipAttachment);
+
 	//Jump
 	void SetJumpWindowT();
 	void SetJumpWindowF(bool ShoulDelay);

@@ -75,7 +75,7 @@ AATHAscila::AATHAscila()
 void AATHAscila::BeginPlay()
 {
 	Super::BeginPlay();
-	//SpawnBow();
+	SpawnBow();
 }
 
 // Called every frame
@@ -104,6 +104,8 @@ void AATHAscila::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 	PlayerInputComponent->BindAction("DrawArrow", IE_Released, this, &AATHAscila::RequestFire);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AATHAscila::MovementAction);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &AATHAscila::RequestJump);
+	////////////////////////////////////////////////////////////// To DO! Prevent people from spamming UNEQUIP AND EQUIP!
+	PlayerInputComponent->BindAction("EquipBowToggle", IE_Pressed, this, &AATHAscila::EquipStateToggle);
 }
 
 	#pragma region  General Input
@@ -557,7 +559,14 @@ void AATHAscila::RequestJump()
 						}
 						if (InputRight != 0)
 						{
-							BracedSideJump(InputRight);
+							if(bCanBracedJumpRight || bCanBracedJumpLeft)
+							{
+								BracedSideJump(InputRight);
+							}
+							else
+							{
+								BracedTurnCorner(InputRight);
+							}
 						}
 					}
 					// Not holding down Jump
@@ -844,6 +853,7 @@ void AATHAscila::Landed(const FHitResult & Hit)
 		}
 	}
 	bSprintJumped = false;
+	SetParkourStatus(EParkourStatus::Eps_NA);
 	GetWorldTimerManager().SetTimer(LandedHandle, this, &AATHAscila::SetNeedsToLandF, 0.25f, false);
 }
 void AATHAscila::SetShouldRollLand(bool ShouldRollLand)
@@ -1121,7 +1131,68 @@ void AATHAscila::SpawnBow()
 	FVector spawnLocation = this->GetActorLocation();
 
 	EquippedBow = world->SpawnActor<AATHBow>(BowClass, spawnLocation, rotator, spawnParams);
-	EquippedBow->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, BowSocketName);
+	EquippedBow->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, UnEquippedBowSocketName);
+}
+void AATHAscila::EquipBow()
+{
+	if (EquipBowMontage)
+	{
+		PlayAnimMontage(EquipBowMontage, 1.0f, NAME_None);
+	}
+	else
+	{
+		EquippedBow->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, EquippedBowSocketName);
+	}
+}
+void AATHAscila::UnEquipBow()
+{
+	if (UnEquipBowMontage)
+	{
+		PlayAnimMontage(UnEquipBowMontage, 1.0f, NAME_None);
+	}
+	else
+	{
+		EquippedBow->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, UnEquippedBowSocketName);
+	}
+}
+void AATHAscila::EquipStateToggle()
+{
+	if (ParentStance != EParentStance::Eps_Parkouring)
+	{
+		if (bBowEquipped)
+		{
+			UnEquipBow();
+		}
+		else
+		{
+			EquipBow();
+		}
+	}
+}
+void AATHAscila::SetEquipBowState(bool shouldEquipBow)
+{
+	if (shouldEquipBow)
+	{
+		bBowEquipped = true;
+	}
+	else
+	{
+		bBowEquipped = false;
+		RequestUnAim();
+	}
+}
+
+void AATHAscila::SetAttachBow(bool EquipAttachment)
+{
+	if (EquipAttachment)
+	{
+		EquippedBow->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, EquippedBowSocketName);
+	}
+	else
+	{
+		EquippedBow->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, UnEquippedBowSocketName);
+	}
+
 }
 
 	#pragma endregion 
@@ -1446,8 +1517,9 @@ void AATHAscila::LedgeTraceHeight()
 	{
 		if(ToGroundDistance < 98)
 		{
-			TraceHeight = 30.0f - ToGroundDistance;
+
 		}
+		TraceHeight = 90.0f;
 	}
 	float ForwardDistance = 70.0f;
 	//FVector StartLocation = FVector(WallTraceLocation.X, WallTraceLocation.Y, WallTraceLocation.Z + TraceHeight);
@@ -1672,6 +1744,10 @@ void AATHAscila::LeftCornerTracer()
 		else
 		{
 			bCanBracedTurnLeft = false;
+			if (ParkourStatus == EParkourStatus::Eps_BracedMovingLeft)
+			{
+				SetParkourStatus(EParkourStatus::Eps_BracedIdling);
+			}
 		}
 
 	}
@@ -1705,6 +1781,10 @@ void AATHAscila::RightCornerTracer()
 		else
 		{
 			bCanBracedTurnRight = false;
+			if (ParkourStatus == EParkourStatus::Eps_BracedMovingRight)
+			{
+				SetParkourStatus(EParkourStatus::Eps_BracedIdling);
+			}
 		}
 	}
 }
@@ -1757,7 +1837,7 @@ void AATHAscila::LedgeCalculation()
 			FVector WallNormalAdjusted = WallNormal * FVector(22.0f, 22.0f, 0);
 
 			FVector TargetRelativeLocation = FVector(WallNormalAdjusted.X + WallTraceLocation.X, WallNormalAdjusted.Y + WallTraceLocation.Y,
-				WallHeightLocation.Z - 87.5f);
+				WallHeightLocation.Z - 83.5f);
 
 			FRotator TargetRelativeRotation = FRotator(UKismetMathLibrary::Conv_VectorToRotator(WallNormal).Pitch - 5, UKismetMathLibrary::Conv_VectorToRotator(WallNormal).Yaw - 180,
 				UKismetMathLibrary::Conv_VectorToRotator(WallNormal).Roll);
