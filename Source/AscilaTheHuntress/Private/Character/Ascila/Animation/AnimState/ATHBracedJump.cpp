@@ -28,7 +28,6 @@ void UATHBracedJump::NotifyEnd(USkeletalMeshComponent * MeshComp, UAnimSequenceB
 			AscilaCharacter->SetButtonEnabled(true);
 			AscilaCharacter->SetParkourStatus(EParkourStatus::Eps_NA);
 			AscilaCharacter->GrabLedge();
-			//APlayerController* AscilaPC = MeshComp->GetWorld()->GetFirstPlayerController();
 		}
 	}
 }
