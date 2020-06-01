@@ -17,6 +17,6 @@
 #define SURFACE_METAL				SurfaceType10
 
 // Collision/Trace Channels
-#define COLLISION_LEDGE					TraceTypeQuery1
+#define COLLISION_LEDGE				ECC_GameTraceChannel1
 #define COLLISION_BOW					ECC_GameTraceChannel2
 

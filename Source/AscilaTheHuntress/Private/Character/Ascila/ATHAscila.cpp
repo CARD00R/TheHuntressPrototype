@@ -46,6 +46,10 @@ AATHAscila::AATHAscila()
 	GetCapsuleComponent()->SetCapsuleRadius(StandCapsuleRadius);
 	GetCapsuleComponent()->SetCapsuleHalfHeight(StandCapsuleHalfHeight);
 
+	// Convert Collision Channel to Trace Query
+
+	TRACEQUERY_LEDGE = UEngineTypes::ConvertToTraceType(COLLISION_LEDGE);
+
 	// Arrow Components
 		// Move Arrows
 	ArrowMoveRightComp = CreateDefaultSubobject<UArrowComponent>(TEXT("ArrowMoveRightComp"));
@@ -1496,7 +1500,7 @@ void AATHAscila::LedgeTraceForward()
 	TArray<AActor*> MakeArray;
 	FHitResult Hit;
 
-	if(UKismetSystemLibrary::SphereTraceSingle(GetWorld(), StartLocation, EndLocation,20,COLLISION_LEDGE, false, MakeArray,
+	if(UKismetSystemLibrary::SphereTraceSingle(GetWorld(), StartLocation, EndLocation,20, TRACEQUERY_LEDGE, false, MakeArray,
 		EDrawDebugTrace::ForOneFrame,Hit,true, FLinearColor::Red, FLinearColor::Green,0))
 	{
 		if(bShouldParkourTrace)
@@ -1505,6 +1509,8 @@ void AATHAscila::LedgeTraceForward()
 			WallNormal = Hit.Normal;
 			LedgeTraceHeight();
 		}
+		FString name = Hit.Actor->GetName();
+		UE_LOG(LogTemp, Error, TEXT("%s"), *name);
 	}
 }
 void AATHAscila::LedgeTraceHeight()
@@ -1530,7 +1536,7 @@ void AATHAscila::LedgeTraceHeight()
 	TArray<AActor*> MakeArray;
 	FHitResult Hit;
 
-	if (UKismetSystemLibrary::SphereTraceSingle(GetWorld(), MidLocation, EndLocation, 20, COLLISION_LEDGE, false, MakeArray,
+	if (UKismetSystemLibrary::SphereTraceSingle(GetWorld(), MidLocation, EndLocation, 20, TRACEQUERY_LEDGE, false, MakeArray,
 		EDrawDebugTrace::ForOneFrame, Hit, true, FLinearColor::Red, FLinearColor::Green, 0))
 	{
 		WallHeightLocation = Hit.Location;
@@ -1595,7 +1601,7 @@ void AATHAscila::LeftMoveLedgeTracer()
 		TArray<AActor*> MakeArray;
 		FHitResult Hit;
 
-		if (UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), StartLocation, EndLocation, 20.0f, 60.0f, COLLISION_LEDGE, false, MakeArray,
+		if (UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), StartLocation, EndLocation, 20.0f, 60.0f, TRACEQUERY_LEDGE, false, MakeArray,
 			EDrawDebugTrace::ForOneFrame, Hit, true, FLinearColor::Red, FLinearColor::Green, 0))
 		{
 			bCanBracedMoveLeft = true;
@@ -1621,7 +1627,7 @@ void AATHAscila::RightMoveLedgeTracer()
 		TArray<AActor*> MakeArray;
 		FHitResult Hit;
 
-		if (UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), StartLocation, EndLocation, 20.0f, 60.0f, COLLISION_LEDGE, false, MakeArray,
+		if (UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), StartLocation, EndLocation, 20.0f, 60.0f, TRACEQUERY_LEDGE, false, MakeArray,
 			EDrawDebugTrace::ForOneFrame, Hit, true, FLinearColor::Red, FLinearColor::Green, 0))
 		{
 			bCanBracedMoveRight = true;
@@ -1646,7 +1652,7 @@ void AATHAscila::LeftJumpLedgeTracer()
 		TArray<AActor*> MakeArray;
 		FHitResult Hit;
 
-		if (UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), StartLocation, EndLocation, 20.0f, 60.0f, COLLISION_LEDGE, false, MakeArray,
+		if (UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), StartLocation, EndLocation, 20.0f, 60.0f, TRACEQUERY_LEDGE, false, MakeArray,
 			EDrawDebugTrace::ForOneFrame, Hit, true, FLinearColor::Red, FLinearColor::Green, 0))
 		{
 			if(!bCanBracedMoveLeft)
@@ -1674,7 +1680,7 @@ void AATHAscila::RightJumpLedgeTracer()
 		TArray<AActor*> MakeArray;
 		FHitResult Hit;
 
-		if (UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), StartLocation, EndLocation, 20.0f, 60.0f, COLLISION_LEDGE, false, MakeArray,
+		if (UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), StartLocation, EndLocation, 20.0f, 60.0f, TRACEQUERY_LEDGE, false, MakeArray,
 			EDrawDebugTrace::ForOneFrame, Hit, true, FLinearColor::Red, FLinearColor::Green, 0))
 		{
 			if(!bCanBracedMoveRight)
@@ -1694,21 +1700,34 @@ void AATHAscila::RightJumpLedgeTracer()
 }
 void AATHAscila::UpJumpLedgeTracer()
 {
-
-	// Trace Params
-	FVector StartLocation = ArrowJumpUpComp->GetComponentLocation();
-	FVector EndLocation = StartLocation;
-	TArray<AActor*> MakeArray;
-	FHitResult Hit;
-
-	if (UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), StartLocation, EndLocation, 20.0f, 100.0f, COLLISION_LEDGE, false, MakeArray,
-		EDrawDebugTrace::ForOneFrame, Hit, true, FLinearColor::Red, FLinearColor::Green, 0))
+	if(bIsBraced)
 	{
-		bCanBracedJumpUp = true;
-	}
-	else
-	{
-		bCanBracedJumpUp = false;
+		// Trace Params
+		FVector StartLocation = ArrowJumpUpComp->GetComponentLocation();
+		FVector EndLocation = FVector(StartLocation.X, StartLocation.Y, StartLocation.Z);
+		TArray<AActor*> MakeArray;
+		FHitResult Hit;
+
+
+		
+		if (UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), StartLocation, EndLocation, 20.0f, 35.0f, TRACEQUERY_LEDGE, false, MakeArray,
+			EDrawDebugTrace::ForOneFrame, Hit, true, FLinearColor::Red, FLinearColor::Green, 0))
+		{
+			bCanBracedJumpUp = true;
+		}
+		else
+		{
+			bCanBracedJumpUp = false;
+			/*if(UKismetSystemLibrary::CapsuleTraceSingle(GetWorld(), StartLocation, EndLocation, 20.0f, 35.0f,ECC_Visibility , false, MakeArray,
+				EDrawDebugTrace::ForOneFrame, Hit, true, FLinearColor::Red, FLinearColor::Green, 0))
+			{
+				bCanBracedClimbLedge = false;
+			}
+			else
+			{
+				bCanBracedClimbLedge = true;
+			}*/
+		}
 	}
 }
 void AATHAscila::LeftCornerTracer()
@@ -1726,7 +1745,7 @@ void AATHAscila::LeftCornerTracer()
 	TArray<AActor*> MakeArray;
 	FHitResult Hit;
 
-	if (UKismetSystemLibrary::SphereTraceSingle(GetWorld(), StartLocationAdjusted, EndLocationAdjusted, 20, COLLISION_LEDGE, false, MakeArray,
+	if (UKismetSystemLibrary::SphereTraceSingle(GetWorld(), StartLocationAdjusted, EndLocationAdjusted, 20, TRACEQUERY_LEDGE, false, MakeArray,
 		EDrawDebugTrace::ForOneFrame, Hit, true, FLinearColor::Red, FLinearColor::Green, 0))
 	{
 		bCanBracedTurnLeft = false;
@@ -1767,7 +1786,7 @@ void AATHAscila::RightCornerTracer()
 	TArray<AActor*> MakeArray;
 	FHitResult Hit;
 
-	if (UKismetSystemLibrary::SphereTraceSingle(GetWorld(), StartLocationAdjusted, EndLocationAdjusted, 20, COLLISION_LEDGE, false, MakeArray,
+	if (UKismetSystemLibrary::SphereTraceSingle(GetWorld(), StartLocationAdjusted, EndLocationAdjusted, 20, TRACEQUERY_LEDGE, false, MakeArray,
 		EDrawDebugTrace::ForOneFrame, Hit, true, FLinearColor::Red, FLinearColor::Green, 0))
 	{
 		bCanBracedTurnRight = false;

@@ -363,28 +363,25 @@ protected:
 	//bool bCanGrab = false;
 
 	bool bIsBraced = false;
-	//UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
 	bool bCanBracedMoveRight = false;
-	//UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
 	bool bCanBracedMoveLeft = false;
-	//UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
 	bool bCanBracedJumpLeft = false;
-	//UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
 	bool bCanBracedJumpRight = false;
-	//UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
 	bool bCanBracedTurnLeft = false;
-	//UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
 	bool bCanBracedTurnRight = false;
 	UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
 	bool bCanBracedJumpUp = false;
 	UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
 	bool bCanBracedJumpDown = false;
+	UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
+	bool bCanBracedClimbLedge = false;
 
 	// Capsule Sizes/Heights
 	float BracedCapsuleRadius = 35.0f;
 	float BracedCapsuleHalfHeight = 50;
 	FVector BracedInitialiseMeshLocation = FVector(-9.0f,-4.5f,-141.0f);
 	//Traces
+	ETraceTypeQuery TRACEQUERY_LEDGE;
 		// Toggle
 	void ToggleForwardHeightTracer();
 	UPROPERTY(VisibleInstanceOnly, Category = "Parkour")
